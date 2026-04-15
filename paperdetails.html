@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Details - ResearchHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js?v=2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf_viewer.min.css">
+    <style>
+        .meta-tag {
+            background: var(--accent-primary-light);
+            padding: 0.4rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-right: 0.6rem;
+            margin-bottom: 0.8rem;
+            color: var(--accent-primary-dark);
+            font-weight: 500;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--bg-secondary);
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            cursor: pointer;
+            border: none;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .bullets-list {
+            padding-left: 1.5rem;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+
+        .pdf-page-container {
+            position: relative;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-lg);
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .pdf-page-container canvas {
+            display: block;
+        }
+        
+        .textLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.2;
+            line-height: 1.0;
+        }
+
+        .textLayer ::selection {
+            background: var(--accent-primary);
+            color: transparent;
+        }
+
+        .breadcrumb-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-primary);
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .breadcrumb-back:hover {
+            color: var(--accent-primary-dark);
+            transform: translateX(-4px);
+        }
+    </style>
+</head>
+
+<body>
+    <script>checkAuth();</script>
+
+    <div class="sidebar">
+        <div class="brand-area">
+            <div class="brand-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="brand-info">
+                <div class="brand-title">ResearchHub</div>
+                <div class="brand-tagline">Research Manager</div>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="papers.html" class="nav-link active">
+                    <i class="fas fa-book-bookmark"></i>
+                    <span>Library</span>
+                </a>
+                <a href="upload.html" class="nav-link">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <span>Upload</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Tools</div>
+                <a href="#" class="nav-link" onclick="showComingSoon(); return false;">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="#" class="nav-link" onclick="showComingSoon(); return false;">
+                    <i class="fas fa-highlighter"></i>
+                    <span>Highlights</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="logout-area">
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt" style="margin-right: 0.4rem;"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-header">
+            <div class="header-left">
+                <h1 class="header-title">Paper Details</h1>
+                <div class="header-search">
+                    <input type="text" placeholder="Search papers..." id="headerSearch">
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-info">
+                    <div class="welcome-text">Welcome back</div>
+                    <div class="user-name" id="headerUserName">User</div>
+                </div>
+                <div class="user-avatar" id="headerAvatar">U</div>
+            </div>
+        </div>
+
+        <div class="container" style="max-width: 900px; margin: 2rem auto;">
+            <a href="papers.html" class="breadcrumb-back">
+                <i class="fas fa-arrow-left"></i> Back to Library
+            </a>
+
+            <div class="glass-container" id="detailsBox" style="border: 1px solid var(--bg-tertiary); border-radius: 12px;">
+                <!-- Dynamic render -->
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        (async function() {
+            checkAuth();
+            const user = getCurrentUser();
+            document.getElementById('headerUserName').textContent = user;
+            document.getElementById('headerAvatar').textContent = user.charAt(0).toUpperCase();
+
+            await loadPapersFromBackend();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            let paperId = parseInt(urlParams.get('id'));
+
+            function loadPaper() {
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                const box = document.getElementById("detailsBox");
+
+                if (!paper) {
+                    box.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fas fa-file-times"></i></div>
+                            <div class="empty-title">Paper Not Found</div>
+                            <div class="empty-text">This paper doesn't exist or may have been deleted.</div>
+                            <button class="btn" onclick="window.location.href='papers.html'" style="margin-top: 1rem;">
+                                <i class="fas fa-arrow-left"></i> Go to Library
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const statusBadgeClass = paper.status === 'completed' ? 'status-completed' : 
+                                        (paper.status === 'in_progress' ? 'status-progress' : 'status-not-started');
+                const statusText = paper.status === 'completed' ? 'Completed' : 
+                                  (paper.status === 'in_progress' ? 'In Progress' : 'Not Started');
+
+                let progressWidget = "";
+                if (paper.status === 'in_progress') {
+                    progressWidget = `
+                    <div style="background: var(--accent-primary-light); padding: 2rem; border-radius: 12px; margin-top: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h4 style="color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.6rem;">
+                                <i class="fas fa-book-reader"></i> Reading Progress
+                            </h4>
+                            <span style="color: var(--accent-primary-dark); font-weight: bold; font-size: 1.1rem;" id="progDisplay">${Math.round((paper.progress || 0) * 100)}%</span>
+                        </div>
+                        <input type="range" class="range-slider" min="0" max="100" value="${Math.round((paper.progress || 0) * 100)}" oninput="document.getElementById('progDisplay').innerText = this.value + '%';" onchange="updateProgress(this.value)">
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button class="btn btn-success" style="flex: 1;" onclick="updateStatus('completed')">
+                                <i class="fas fa-check-circle"></i> Mark as Completed
+                            </button>
+                        </div>
+                    </div>`;
+                } else if (paper.status === 'not_started') {
+                    progressWidget = `
+                    <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                        <button class="btn" style="flex: 1;" onclick="updateStatus('in_progress')">
+                            <i class="fas fa-play-circle"></i> Start Reading
+                        </button>
+                        <button class="btn btn-secondary" onclick="updateStatus('completed')">
+                            <i class="fas fa-fast-forward"></i> Mark Completed
+                        </button>
+                    </div>`;
+                } else if (paper.status === 'completed') {
+                    progressWidget = `
+                    <div style="background: var(--pastel-mint); padding: 2rem; border-radius: 12px; margin-top: 2rem; text-align: center;">
+                        <h4 style="color: var(--success); margin: 0 0 0.5rem 0; font-size: 1.2rem;">
+                            <i class="fas fa-check-circle"></i> Paper Completed
+                        </h4>
+                        <p style="color: var(--text-secondary); margin: 0;">You've finished reading this paper!</p>
+                        <button class="btn btn-secondary" onclick="updateStatus('in_progress')" style="margin-top: 1rem;">
+                            <i class="fas fa-redo"></i> Mark as In Progress
+                        </button>
+                    </div>`;
+                }
+
+                let summaryHtml = "";
+                if (paper.status === "completed") {
+                    let bulletsHtml = "";
+                    if (paper.keyPoints) {
+                        const keyPointsList = typeof paper.keyPoints === 'string' ? 
+                            paper.keyPoints.split('\n').filter(kp => kp.trim()) : 
+                            paper.keyPoints;
+                        if (keyPointsList.length > 0) {
+                            bulletsHtml = `
+                            <div style="margin-top: 1.5rem;">
+                                <h4 style="color: var(--accent-primary); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.6rem;">
+                                    <i class="fas fa-lightbulb"></i> Key Points
+                                </h4>
+                                <ul class="bullets-list">
+                                    ${keyPointsList.map(kp => `<li style="margin-bottom: 0.5rem; color: var(--text-secondary);">${kp.replace(/^-\s*/, '')}</li>`).join('')}
+                                </ul>
+                            </div>`;
+                        }
+                    }
+
+                    summaryHtml = `
+                    <div style="background: var(--accent-secondary-light); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border-left: 4px solid var(--accent-secondary);">
+                        <h4 style="color: var(--accent-secondary); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.6rem;">
+                            <i class="fas fa-bookmark"></i> Detailed Summary
+                        </h4>
+                        <p style="color: var(--text-secondary); line-height: 1.6; margin: 0;">${paper.detailedSummary || paper.fullSummary || 'No detailed summary provided.'}</p>
+                        ${bulletsHtml}
+                    </div>`;
+                } else {
+                    summaryHtml = `
+                    <div style="background: var(--pastel-rose); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid rgba(239, 68, 68, 0.3); text-align: center;">
+                        <h4 style="color: var(--danger); margin: 0 0 0.5rem 0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <i class="fas fa-lock"></i> Detailed Content Locked
+                        </h4>
+                        <p style="color: var(--text-secondary); margin: 0;">Complete this paper to view the detailed summary and key points.</p>
+                    </div>`;
+                }
+
+                const diffClass = paper.difficulty === 'Intermediate' ? 'diff-intermediate' : 
+                                 (paper.difficulty === 'Advanced' ? 'diff-advanced' : 'diff-beginner');
+
+                box.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                        <div style="flex: 1;">
+                            <h1 style="font-size: 1.75rem; margin: 0 0 0.5rem 0; color: var(--text-primary); line-height: 1.3;">
+                                ${paper.title}
+                            </h1>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 1rem;">
+                                <i class="fas fa-user"></i> ${paper.author}
+                                <span style="color: var(--text-tertiary); margin: 0 0.5rem;;">•</span>
+                                <i class="fas fa-calendar"></i> ${paper.year}
+                            </p>
+                        </div>
+                        <button class="rec-icon-btn ${paper.isFavorite ? 'active' : ''}" onclick="toggleFavorite()" style="font-size: 1.8rem; width: auto; height: auto; padding: 0.5rem 1rem;">
+                            <i class="fas ${paper.isFavorite ? 'fa-heart' : 'fa-heart'} fa-heart"></i>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 2rem;">
+                        <span class="badge badge-primary">${paper.domain || 'General'}</span>
+                        <span class="badge ${diffClass}">${paper.difficulty || 'Intermediate'}</span>
+                        ${paper.timeToRead ? `<span class="badge badge-info"><i class="fas fa-hourglass-half"></i> ${paper.timeToRead}</span>` : ''}
+                        <span class="status-badge ${statusBadgeClass}">
+                            <i class="fas ${statusBadgeClass === 'status-completed' ? 'fa-check-circle' : (statusBadgeClass === 'status-progress' ? 'fa-book-open' : 'fa-bookmark')}"></i>
+                            ${statusText}
+                        </span>
+                    </div>
+
+                    <div style="background: var(--bg-secondary); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem;">
+                        <h4 style="color: var(--text-primary); margin: 0 0 0.8rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-align-left"></i> Overview
+                        </h4>
+                        <p style="color: var(--text-secondary); margin: 0; line-height: 1.6;">
+                            ${paper.shortSummary || 'No overview available.'}
+                        </p>
+                    </div>
+
+                    ${progressWidget}
+                    ${summaryHtml}
+                `;
+            }
+
+            loadPaper();
+
+            function updateStatus(newStatus) {
+                showToast(`Status updated to ${newStatus}`, false);
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                if (paper) {
+                    paper.status = newStatus;
+                    loadPaper();
+                }
+            }
+
+            function updateProgress(percent) {
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                if (paper) {
+                    paper.progress = parseInt(percent) / 100;
+                }
+            }
+
+            function toggleFavorite() {
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                if (paper) {
+                    paper.isFavorite = !paper.isFavorite;
+                    loadPaper();
+                    showToast(paper.isFavorite ? 'Added to favorites!' : 'Removed from favorites', false);
+                }
+            }
+
+            function showComingSoon() {
+                showToast('This feature is coming soon!', false);
+            }
+        })();
+    </script>
+</body>
+
+</html>
+
+            const urlParams = new URLSearchParams(window.location.search);
+            let paperId = parseInt(urlParams.get('id'));
+
+            function loadPaper() {
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                const box = document.getElementById("detailsBox");
+
+                if (!paper) {
+                    box.innerHTML = `<h2 style="color: var(--danger)">Paper not found.</h2>`;
+                    return;
+                }
+
+                addRecentlyViewed(paper);
+
+                let statusClass = "";
+                let statusIcon = "";
+                if (paper.status === "Completed") { statusClass = "status-completed"; statusIcon = "✅"; }
+                else if (paper.status === "In Progress") { statusClass = "status-progress"; statusIcon = "⏳"; }
+                else { statusClass = "status-not-started"; statusIcon = "❌"; }
+
+                let progressWidget = "";
+                if (paper.status === "In Progress") {
+                    progressWidget = `
+                    <div style="background: rgba(0,0,0,0.3); padding: 1.5rem; border-radius: 12px; margin-top: 2rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                            <span style="color:#fff; font-weight:500;">Reading Progress</span>
+                            <span style="color:var(--primary-violet); font-weight:bold;" id="progDisplay">${paper.progress || 0}%</span>
+                        </div>
+                        <input type="range" class="range-slider" min="0" max="100" value="${paper.progress || 0}" oninput="document.getElementById('progDisplay').innerText = this.value + '%';" onchange="updateProgress(this.value)">
+                        <div style="text-align:right; margin-top: 1rem;">
+                            <button class="btn btn-secondary" onclick="updateStatus('Completed')">Mark as Completed ✅</button>
+                        </div>
+                    </div>`;
+                } else if (paper.status === "Not Started") {
+                    progressWidget = `
+                    <div style="margin-top: 2rem; text-align: center;">
+                        <button class="btn" onclick="updateStatus('In Progress')" style="padding: 0.8rem 2rem; font-size: 1.1rem;">Start Reading 🚀</button>
+                    </div>
+                    `;
+                } else if (paper.status === "Completed") {
+                    progressWidget = `
+                    <div style="margin-top: 2rem; text-align: right;">
+                        <button class="btn btn-secondary" onclick="updateStatus('Not Started')">Mark Unread</button>
+                    </div>
+                    `;
+                }
+
+                let summaryHtml = "";
+                if (paper.status === "Completed") {
+                    let bulletsHtml = "";
+                    if(paper.keyPoints && paper.keyPoints.length > 0) {
+                        bulletsHtml = `<h4 style="color: #b070ff; margin-bottom: 0.8rem; margin-top: 1.5rem;">Key Points</h4>
+                        <ul class="bullets-list">
+                            ${paper.keyPoints.map(kp => `<li style="margin-bottom:0.5rem;">${kp}</li>`).join('')}
+                        </ul>`;
+                    }
+
+                    let tierSelectHtml = `
+                    <div style="margin-top: 1.5rem; padding: 1.5rem; border: 1px solid var(--primary-violet); border-radius: 12px; background: rgba(142, 68, 173, 0.1);">
+                        <h4 style="color:#fff; margin-bottom: 0.5rem;">🗂️ Archive Classification</h4>
+                        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom: 1rem;">Classify this completed paper to store it securely in your archives.</p>
+                        <div style="display:flex; gap:1rem; align-items:center;">
+                            <select id="tierSelect" class="input-field" style="max-width:200px;">
+                                <option value="None" ${paper.tier === 'None' || !paper.tier ? 'selected' : ''}>Unclassified</option>
+                                <option value="Q1" ${paper.tier === 'Q1' ? 'selected' : ''}>Q1 Journal</option>
+                                <option value="Q2" ${paper.tier === 'Q2' ? 'selected' : ''}>Q2 Journal</option>
+                                <option value="Q3" ${paper.tier === 'Q3' ? 'selected' : ''}>Q3 Journal</option>
+                                <option value="Conference" ${paper.tier === 'Conference' ? 'selected' : ''}>Conference</option>
+                            </select>
+                            <button class="btn" onclick="updateTier()">Save Tier</button>
+                        </div>
+                    </div>`;
+
+                    summaryHtml = `
+                    <div style="background: rgba(0,0,0,0.4); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; line-height: 1.8;">
+                        <h4 style="color: #b070ff; margin-bottom: 0.5rem;">Detailed Summary</h4>
+                        <p style="color: #d0d0e0;">${paper.detailedSummary || paper.fullSummary || 'No detailed summary provided.'}</p>
+                        ${bulletsHtml}
+                    </div>
+                    ${tierSelectHtml}
+                    `;
+                } else {
+                    summaryHtml = `
+                    <div style="background: rgba(231, 76, 60, 0.1); border: 1px dashed var(--danger); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; text-align: center;">
+                        <h4 style="color: var(--danger); margin-bottom: 0.5rem;">Detailed Features Locked 🔒</h4>
+                        <p style="color: var(--text-muted)">Detailed Summary, Key Points, and Archiving are concealed until this paper is marked <strong>Completed</strong>.</p>
+                    </div>`;
+                }
+
+                let pdfWidget = "";
+                if (paper.pdfPath && paper.pdfPath !== 'NULL') {
+                    pdfWidget = `
+                    <div style="margin-top: 3rem; background: #1a1a24; border-radius: 12px; padding: 1.5rem; border: 1px solid #333;">
+                        <h3 style="color:#fff; margin-bottom: 1rem; display:flex; justify-content:space-between;">
+                            <span>Document Viewer</span>
+                            <span id="autoProgress" style="color: var(--primary-violet); font-size: 1rem;">Tracking Progress: ${paper.progress || 0}%</span>
+                        </h3>
+                        <div id="pdf-viewer" style="height: 600px; overflow-y: scroll; display: flex; flex-direction: column; align-items: center; background: #0f0f13; border-radius: 8px;">
+                            <p id="pdf-loading" style="color:var(--text-muted); padding:2rem;">Loading Document...</p>
+                        </div>
+                    </div>`;
+                }
+                
+                let diffClass = "diff-beginner";
+                if(paper.difficulty === 'Intermediate') diffClass = "diff-intermediate";
+                else if(paper.difficulty === 'Advanced') diffClass = "diff-advanced";
+
+                box.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <h1 style="font-size: 2.2rem; margin-bottom: 1rem; color: #fff;">${paper.title}</h1>
+                <span class="favorite-icon ${paper.isFavorite ? 'active' : ''}" style="font-size:2rem; margin-top:0.3rem;" onclick="toggleFavorite()">★</span>
+            </div>
+            
+            <div class="tags-container" style="margin-bottom: 1.5rem;">
+                <span class="tag-badge ${diffClass}">${paper.difficulty || 'Unknown'}</span>
+                <span class="tag-badge">${paper.domain || 'General'}</span>
+                <span class="tag-badge">⏳ ${paper.timeToRead || '-'}</span>
+            </div>
+            
+            <div>
+              <span class="meta-tag">👤 ${paper.author}</span>
+              <span class="meta-tag">📅 ${paper.year}</span>
+              <span class="status-badge ${statusClass}">${statusIcon} ${paper.status}</span>
+            </div>
+            
+            <div style="margin-top: 2.5rem;">
+              <h4 style="color: var(--text-muted); margin-bottom: 0.5rem;">Short Overview</h4>
+              <p style="font-size: 1.05rem; color: #d0d0e0; line-height: 1.6;">${paper.shortSummary || 'No overview available.'}</p>
+            </div>
+
+            ${progressWidget}
+            ${summaryHtml}
+            ${pdfWidget}
+          `;
+
+                if (paper.pdfPath && paper.pdfPath !== 'NULL') {
+                    const url = paper.pdfPath; 
+                    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.14.305/pdf.worker.min.js';
+                    
+                    let loadingTask = pdfjsLib.getDocument(url);
+                    loadingTask.promise.then(function(pdf) {
+                        let viewer = document.getElementById('pdf-viewer');
+                        document.getElementById('pdf-loading').style.display = 'none';
+                        
+                        let pagesCount = pdf.numPages;
+                        for (let pageNum = 1; pageNum <= pagesCount; pageNum++) {
+                            pdf.getPage(pageNum).then(function(page) {
+                                let scale = 1.5;
+                                let viewport = page.getViewport({scale: scale});
+                                
+                                let pageContainer = document.createElement('div');
+                                pageContainer.className = 'pdf-page-container';
+                                pageContainer.style.width = viewport.width + "px";
+                                pageContainer.style.height = viewport.height + "px";
+                                viewer.appendChild(pageContainer);
+
+                                let canvas = document.createElement('canvas');
+                                let context = canvas.getContext('2d');
+                                canvas.height = viewport.height;
+                                canvas.width = viewport.width;
+                                canvas.style.maxWidth = "100%";
+                                pageContainer.appendChild(canvas);
+                                
+                                page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
+                                    // Generate scalable text layer
+                                    return page.getTextContent();
+                                }).then(function(textContent) {
+                                    let textLayerDiv = document.createElement('div');
+                                    textLayerDiv.className = 'textLayer';
+                                    pageContainer.appendChild(textLayerDiv);
+                                    
+                                    pdfjsLib.renderTextLayer({
+                                        textContent: textContent,
+                                        container: textLayerDiv,
+                                        viewport: viewport,
+                                        textDivs: []
+                                    });
+                                });
+                            });
+                        }
+
+                        // Scroll listener for auto-progress
+                        let timeout;
+                        viewer.addEventListener('scroll', function() {
+                            clearTimeout(timeout);
+                            timeout = setTimeout(async () => {
+                                let scrollPercent = 0;
+                                if(viewer.scrollHeight > viewer.clientHeight) {
+                                    scrollPercent = Math.min(100, Math.max(0, Math.round((viewer.scrollTop / (viewer.scrollHeight - viewer.clientHeight)) * 100)));
+                                }
+                                document.getElementById('autoProgress').innerText = "Tracking Progress: " + scrollPercent + "%";
+                                
+                                let slider = document.querySelector('.range-slider');
+                                if(slider) {
+                                    slider.value = scrollPercent;
+                                    document.getElementById('progDisplay').innerText = scrollPercent + '%';
+                                }
+                                
+                                if(paper.progress !== scrollPercent) {
+                                    let stat = paper.status;
+                                    if(scrollPercent >= 99) stat = 'Completed';
+                                    else if(scrollPercent > 0) stat = 'In Progress';
+                                    
+                                    await window.updateProgressSilent(scrollPercent, stat);
+                                    paper.progress = scrollPercent;
+                                    paper.status = stat;
+                                    
+                                    // Soft refresh without wiping view
+                                    let statusSpan = document.querySelector('.status-badge');
+                                    if(statusSpan) {
+                                        if (stat === "Completed") { statusSpan.className = "status-badge status-completed"; statusSpan.innerHTML = "✅ Completed"; }
+                                        else if (stat === "In Progress") { statusSpan.className = "status-badge status-progress"; statusSpan.innerHTML = "⏳ In Progress"; }
+                                    }
+                                }
+                            }, 400); // 400ms debounce
+                        });
+                    }).catch(err => {
+                        document.getElementById('pdf-loading').innerText = "Failed to load PDF file.";
+                        console.error(err);
+                    });
+                }
+            }
+
+            window.updateProgress = async function(val) {
+                let papers = getPapers();
+                let paper = papers.find(p => p.id === paperId);
+                if(paper) {
+                    let prog = parseInt(val);
+                    let stat = paper.status;
+                    if(prog === 100) stat = 'Completed';
+                    else if (prog > 0) stat = 'In Progress';
+                    await updatePaperStatus(paper.id, stat, prog, paper.isFavorite);
+                    
+                    // If they drag the slider, scroll the PDF automatically! (Two-way sync)
+                    let viewer = document.getElementById('pdf-viewer');
+                    if(viewer && viewer.scrollHeight > viewer.clientHeight) {
+                        viewer.scrollTop = (prog / 100) * (viewer.scrollHeight - viewer.clientHeight);
+                    }
+                    
+                    loadPaper();
+                }
+            }
+
+            window.updateProgressSilent = async function(prog, stat) {
+                let papers = getPapers();
+                let paper = papers.find(p => p.id === paperId);
+                if(paper) {
+                    await updatePaperStatus(paper.id, stat, prog, paper.isFavorite);
+                }
+            }
+
+            window.updateStatus = async function(stat) {
+                let papers = getPapers();
+                let paper = papers.find(p => p.id === paperId);
+                if(paper) {
+                    let prog = paper.progress;
+                    if(stat === 'Completed') prog = 100;
+                    else if(stat === 'Not Started') prog = 0;
+                    else if(stat === 'In Progress' && prog === 100) prog = 10;
+                    
+                    await updatePaperStatus(paper.id, stat, prog, paper.isFavorite, paper.tier);
+                    loadPaper();
+                }
+            }
+            
+            window.updateTier = async function() {
+                let papers = getPapers();
+                let paper = papers.find(p => p.id === paperId);
+                if(paper) {
+                    let newTier = document.getElementById("tierSelect").value;
+                    await updatePaperStatus(paper.id, paper.status, paper.progress, paper.isFavorite, newTier);
+                    showToast("Archived as " + newTier + "!");
+                    loadPaper();
+                }
+            }
+            
+            window.toggleFavorite = async function() {
+                let papers = getPapers();
+                let paper = papers.find(p => p.id === paperId);
+                if(paper) {
+                    await updatePaperStatus(paper.id, paper.status, paper.progress, !paper.isFavorite);
+                    loadPaper();
+                }
+            }
+
+            loadPaper();
+
+            // Fire Highlighter Initialization after rendering
+            initHighlighter();
+        })();
+
+        // -------------------------
+        // TEXT HIGHLIGHTER ENGINE
+        // -------------------------
+        let activeSelectionText = "";
+        let activeSelectionRange = null;
+        let hlToolbar = null;
+        let localHighlights = [];
+
+        async function initHighlighter() {
+            hlToolbar = document.getElementById("highlightToolbar");
+            document.addEventListener("mouseup", handleTextSelection);
+            document.addEventListener("mousedown", handleMouseDown);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const paperIdForHl = parseInt(urlParams.get('id'));
+            const userId = localStorage.getItem("currentUserId") || "default";
+            await fetchHighlights(paperIdForHl, userId);
+        }
+
+        function handleMouseDown(e) {
+            if (hlToolbar && !hlToolbar.contains(e.target)) {
+                hlToolbar.classList.remove("active");
+            }
+        }
+
+        function handleTextSelection(e) {
+            if (e.target.closest('.floating-toolbar') || e.target.closest('.highlights-sidebar') || e.target.tagName === 'INPUT') return;
+
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+            
+            if (text.length > 0) {
+                activeSelectionText = text;
+                activeSelectionRange = selection.getRangeAt(0).cloneRange();
+                
+                const rect = activeSelectionRange.getBoundingClientRect();
+                
+                hlToolbar.style.left = (rect.left + (rect.width / 2) - (hlToolbar.offsetWidth / 2)) + "px";
+                hlToolbar.style.top = (rect.top + window.scrollY - hlToolbar.offsetHeight - 15) + "px";
+                hlToolbar.classList.add("active");
+            }
+        }
+
+        async function applyHighlight(color) {
+            if (!activeSelectionText) return;
+            hlToolbar.classList.remove("active");
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const pId = parseInt(urlParams.get('id'));
+
+            try {
+                const res = await fetch("api/save_highlight.php", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        paper_id: pId,
+                        user_id: localStorage.getItem("currentUserId") || "default",
+                        selected_text: activeSelectionText,
+                        color: color
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    window.getSelection().removeAllRanges();
+                    await fetchHighlights(pId, localStorage.getItem("currentUserId") || "default");
+                }
+            } catch (err) { console.error("Highlight Error", err); }
+        }
+
+        async function fetchHighlights(pId, uId) {
+            try {
+                const res = await fetch(`api/get_highlights.php?paper_id=${pId}&user_id=${encodeURIComponent(uId)}`);
+                const data = await res.json();
+                if (data.success) {
+                    localHighlights = data.highlights;
+                    renderSidebar();
+                }
+            } catch (err) { console.error("Fetch Highlights Error", err); }
+        }
+
+        function renderSidebar() {
+            const list = document.getElementById("highlightsList");
+            if(!list) return;
+
+            if(localHighlights.length === 0) {
+                list.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: 2rem;">No highlights saved yet.<br><br>Select any text to highlight it!</p>`;
+                return;
+            }
+
+            list.innerHTML = "";
+            localHighlights.forEach(hl => {
+                list.innerHTML += `
+                    <div class="hl-item color-${hl.color}" onclick="copyTextAlert('${escapeHtml(hl.selected_text)}')">
+                        <div class="hl-item-text">"${escapeHtml(hl.selected_text)}"</div>
+                        <div class="hl-item-meta">
+                            <span>Color: ${hl.color}</span>
+                            <span style="color:var(--danger); cursor:pointer;" onclick="event.stopPropagation(); promptRemove(${hl.id})">Del ✖</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        window.copyTextAlert = function(text) {
+            navigator.clipboard.writeText(text);
+            alert("Highlight Copied: " + text);
+        };
+
+        window.promptRemove = async function(id) {
+            if(confirm("Remove this highlight?")) {
+                try {
+                    const uId = localStorage.getItem("currentUserId") || "default";
+                    const pId = parseInt(new URLSearchParams(window.location.search).get('id'));
+                    await fetch("api/delete_highlight.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: id, user_id: uId })
+                    });
+                    await fetchHighlights(pId, uId);
+                } catch(err) { console.error(err); }
+            }
+        };
+    </script>
+</body>
+</html>

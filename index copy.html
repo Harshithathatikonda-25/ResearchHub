@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard - ResearchHub</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js"></script>
+</head>
+
+<body>
+  <script> checkAuth(); </script>
+
+  <div class="container">
+    <div style="margin-bottom: 2rem;">
+      <h1 class="gradient-text" style="font-size: 2rem;">Overview</h1>
+      <p style="color: var(--text-muted)">Track your personalized reading targets here.</p>
+    </div>
+
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Total Papers</span>
+          <span class="stat-icon">📚</span>
+        </div>
+        <div class="stat-number" id="stat-total">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Completed</span>
+          <span class="stat-icon">✅</span>
+        </div>
+        <div class="stat-number" id="stat-completed" style="color: var(--success);">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">In Progress</span>
+          <span class="stat-icon">⏳</span>
+        </div>
+        <div class="stat-number" id="stat-progress" style="color: var(--warning);">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-title">Not Started</span>
+          <span class="stat-icon">❌</span>
+        </div>
+        <div class="stat-number" id="stat-notstarted" style="color: var(--danger);">0</div>
+      </div>
+    </div>
+
+    <!-- Additional sections logic -->
+    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+      <!-- Continue Reading Section -->
+      <div style="flex: 1; min-width: 300px;">
+        <h2 style="margin-bottom: 1rem; color: #fff; font-size: 1.4rem;">Continue Reading ⏳</h2>
+        <div id="continueReadingContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- JS populated -->
+        </div>
+      </div>
+
+      <!-- Recently Viewed Section -->
+      <div style="flex: 1; min-width: 300px;">
+        <h2 style="margin-bottom: 1rem; color: #fff; font-size: 1.4rem;">Recently Viewed 🕒</h2>
+        <div id="recentlyViewedContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+          <!-- JS populated -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    renderAppShell();
+
+    const stats = getStats();
+    document.getElementById('stat-total').innerText = stats.total;
+    document.getElementById('stat-completed').innerText = stats.completed;
+    document.getElementById('stat-progress').innerText = stats.inProgress;
+    document.getElementById('stat-notstarted').innerText = stats.notStarted;
+
+    const allPapers = getPapers();
+
+    // Populate Continue Reading
+    const inProgressPapers = allPapers.filter(p => p.status === 'In Progress');
+    const crContainer = document.getElementById('continueReadingContainer');
+    if (inProgressPapers.length === 0) {
+      crContainer.innerHTML = `<p style="color: var(--text-muted);">No papers in progress right now.</p>`;
+    } else {
+      inProgressPapers.forEach(p => {
+        crContainer.innerHTML += `
+              <div class="glass-card" style="padding: 1rem;">
+                  <h4 style="color:#fff;">${p.title}</h4>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">${p.author}</p>
+                  <a href="paperdetails.html?id=${p.id}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Resume Reading</a>
+              </div>
+           `;
+      });
+    }
+
+    // Populate Recently Viewed
+    const rvContainer = document.getElementById('recentlyViewedContainer');
+    const recentPapers = getRecentlyViewedPapers();
+    if (recentPapers.length === 0) {
+      rvContainer.innerHTML = `<p style="color: var(--text-muted);">You haven't viewed any papers yet.</p>`;
+    } else {
+      recentPapers.forEach(p => {
+        rvContainer.innerHTML += `
+              <div class="glass-card" style="padding: 1rem;">
+                  <h4 style="color:#fff;">${p.title}</h4>
+                  <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">${p.shortSummary}</p>
+                  <a href="paperdetails.html?id=${p.id}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Details</a>
+              </div>
+           `;
+      });
+    }
+
+  </script>
+</body>
+
+</html>

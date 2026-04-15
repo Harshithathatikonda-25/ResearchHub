@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResearchHub</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: white;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 60px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(15px);
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .nav-links a {
+      margin-left: 25px;
+      color: white;
+      text-decoration: none;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #ffd700;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-top: 120px;
+    }
+
+    .hero h1 {
+      font-size: 50px;
+      font-weight: bold;
+    }
+
+    .hero p {
+      margin-top: 15px;
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    /* Button */
+    .btn {
+      margin-top: 25px;
+      padding: 12px 30px;
+      border-radius: 30px;
+      border: none;
+      background: linear-gradient(45deg, #ffffff, #e0e0ff);
+      color: #6a11cb;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      background: #ffd700;
+      color: black;
+    }
+
+    /* Cards */
+    .cards {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 80px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(15px);
+      padding: 25px;
+      width: 260px;
+      border-radius: 20px;
+      text-align: center;
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h3 {
+      margin-top: 10px;
+      font-size: 20px;
+    }
+
+    .card p {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    if (localStorage.getItem("loggedIn") !== "true") {
+      window.location = "login.html";
+    }
+  </script>
+  <!-- Navbar -->
+  <div class="navbar">
+    <div class="logo">📊 ResearchHub</div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Register</a>
+      <a href="#">Upload</a>
+      <a href="#">Contact</a>
+      <a href="#">Login</a>
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <div class="hero">
+    <h1>Research Paper & Management</h1>
+    <p>Upload, Explore & Manage Research Papers Easily</p>
+
+
+    <button class="btn">Get Started</button>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards">
+
+    <div class="card">
+      <h3>📄 Upload Papers</h3>
+      <p>Share your research with the world</p>
+    </div>
+
+    <div class="card">
+      <h3>🔍 Explore</h3>
+      <p>Find thousands of research papers</p>
+    </div>
+
+    <div class="card">
+      <h3>📊 Manage</h3>
+      <p>Organize your work efficiently</p>
+    </div>
+
+  </div>
+
+</body>
+
+</html>

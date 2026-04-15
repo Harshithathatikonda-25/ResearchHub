@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Paper - ResearchHub</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js?v=2"></script>
+</head>
+
+<body>
+    <script> checkAuth(); </script>
+
+    <div class="sidebar">
+        <div class="brand-area">
+            <div class="brand-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="brand-info">
+                <div class="brand-title">ResearchHub</div>
+                <div class="brand-tagline">Research Manager</div>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+                <a href="index.html" class="nav-link">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="papers.html" class="nav-link">
+                    <i class="fas fa-book-bookmark"></i>
+                    <span>Library</span>
+                </a>
+                <a href="upload.html" class="nav-link active">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <span>Upload</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Tools</div>
+                <a href="#" class="nav-link" onclick="showComingSoon(); return false;">
+                    <i class="fas fa-sticky-note"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="#" class="nav-link" onclick="showComingSoon(); return false;">
+                    <i class="fas fa-highlighter"></i>
+                    <span>Highlights</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Account</div>
+                <a href="#" class="nav-link" onclick="showComingSoon(); return false;">
+                    <i class="fas fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="logout-area">
+            <button class="btn-logout" onclick="logout()">
+                <i class="fas fa-sign-out-alt" style="margin-right: 0.4rem;"></i> Logout
+            </button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-header">
+            <div class="header-left">
+                <h1 class="header-title">Upload</h1>
+                <div class="header-search">
+                    <input type="text" placeholder="Search papers..." id="headerSearch">
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-info">
+                    <div class="welcome-text">Welcome back</div>
+                    <div class="user-name" id="headerUserName">User</div>
+                </div>
+                <div class="user-avatar" id="headerAvatar">U</div>
+            </div>
+        </div>
+
+        <div class="container" style="max-width: 800px; margin: 2rem auto;">
+            <div class="glass-container">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="width: 50px; height: 50px; background: var(--accent-primary-light); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-primary); font-size: 1.75rem;">
+                        <i class="fas fa-book-plus"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin: 0; color: var(--text-primary);">Add Research Paper</h2>
+                        <p style="color: var(--text-secondary); margin: 0.3rem 0 0;">Upload a new paper to your library</p>
+                    </div>
+                </div>
+
+                <form id="uploadForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Title <span class="required">*</span>
+                            </label>
+                            <input type="text" id="title" class="form-control" required placeholder="e.g. Attention is All You Need">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                Author <span class="required">*</span>
+                            </label>
+                            <input type="text" id="author" class="form-control" required placeholder="e.g. Ashish Vaswani">
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Year <span class="required">*</span>
+                            </label>
+                            <input type="number" id="year" class="form-control" required placeholder="e.g. 2017">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Domain</label>
+                            <select id="domain" class="form-control" style="appearance: none;">
+                                <option value="AI / Deep Learning">AI / Deep Learning</option>
+                                <option value="Software Engineering">Software Engineering</option>
+                                <option value="Mathematics">Mathematics</option>
+                                <option value="Physics">Physics</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Est. Reading Time</label>
+                            <input type="text" id="timeToRead" class="form-control" placeholder="e.g. 45 mins">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Difficulty</label>
+                            <select id="difficulty" class="form-control" style="appearance: none;">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr style="border: none; border-top: 1px solid var(--bg-tertiary); margin: 2rem 0;">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.7rem;">
+                        <i class="fas fa-pen-fancy" style="color: var(--accent-primary);"></i>
+                        Summaries & Notes
+                    </h3>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Short Summary (Max 150 chars) <span class="required">*</span>
+                        </label>
+                        <input type="text" id="shortSummary" class="form-control" maxlength="150" required placeholder="Brief overview of the paper...">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Detailed Summary (Shown after completion)</label>
+                        <textarea id="detailedSummary" class="form-control" rows="4" placeholder="Your full analytical notes..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Key Points (One per line)</label>
+                        <textarea id="keyPoints" class="form-control" rows="3" placeholder="- Replaces LSTMs with attention&#10;- Highly parallelizable"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Upload PDF (.pdf) - Optional</label>
+                        <input type="file" id="pdf" class="form-control" accept=".pdf" style="padding: 0.5rem; cursor: pointer;">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" style="margin-top: 1.5rem; font-size: 1rem; padding: 0.9rem;">
+                        <i class="fas fa-save" style="margin-right: 0.5rem;"></i>Save Paper to Library
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        (async function() {
+            const user = getCurrentUser();
+            document.getElementById('headerUserName').textContent = user;
+            document.getElementById('headerAvatar').textContent = user.charAt(0).toUpperCase();
+
+            document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const newPaper = {
+                    id: Date.now(),
+                    title: document.getElementById('title').value,
+                    author: document.getElementById('author').value,
+                    year: document.getElementById('year').value,
+                    domain: document.getElementById('domain').value,
+                    difficulty: document.getElementById('difficulty').value,
+                    timeToRead: document.getElementById('timeToRead').value,
+                    shortSummary: document.getElementById('shortSummary').value,
+                    detailedSummary: document.getElementById('detailedSummary').value,
+                    keyPoints: document.getElementById('keyPoints').value,
+                    status: 'not_started',
+                    progress: 0
+                };
+
+                try {
+                    const res = await fetch('http://localhost/research/api.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user: getCurrentUser(),
+                            paper: newPaper
+                        })
+                    });
+
+                    if (res.ok) {
+                        showToast('Paper uploaded successfully!', false);
+                        document.getElementById('uploadForm').reset();
+                        setTimeout(() => {
+                            window.location.href = 'papers.html';
+                        }, 1500);
+                    }
+                } catch (e) {
+                    showToast('Error uploading paper. Please try again.', true);
+                }
+            });
+        })();
+
+        function showComingSoon() {
+            showToast('This feature is coming soon!', false);
+        }
+    </script>
+</body>
+
+</html>
+            checkAuth();
+            await loadPapersFromBackend();
+            renderAppShell();
+
+            document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData();
+                formData.append("title", document.getElementById("title").value);
+                formData.append("author", document.getElementById("author").value);
+                formData.append("year", document.getElementById("year").value);
+                formData.append("domain", document.getElementById("domain").value);
+                formData.append("timeToRead", document.getElementById("timeToRead").value || 'Unknown');
+                formData.append("difficulty", document.getElementById("difficulty").value);
+                formData.append("shortSummary", document.getElementById("shortSummary").value);
+                formData.append("detailedSummary", document.getElementById("detailedSummary").value);
+                
+                const rawKeyPoints = document.getElementById("keyPoints").value;
+                const keyPoints = rawKeyPoints.split('\n').map(l => l.replace(/^- /, '').trim()).filter(l => l.length > 0);
+                formData.append("keyPoints", JSON.stringify(keyPoints));
+
+                const pdfInput = document.getElementById("pdf");
+                if(pdfInput && pdfInput.files.length > 0) {
+                    formData.append("pdfFile", pdfInput.files[0]);
+                }
+
+                // Send securely over multipart/form-data
+                try {
+                    const res = await fetch("api.php", {
+                        method: "POST",
+                        body: formData // No Content-Type header needed; fetch automatically provisions the multipart boundary!
+                    });
+                    if(!res.ok) throw new Error("Upload Failed");
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error);
+
+                    showToast("Paper successfully added! 🚀");
+                    setTimeout(() => {
+                        window.location.href = "papers.html";
+                    }, 1000);
+                } catch(err) {
+                    console.error(err);
+                    showToast("Error uploading paper.", true);
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>

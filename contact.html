@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Contact</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <script>
+        if (localStorage.getItem("loggedIn") !== "true") {
+            window.location = "login.html";
+        }
+    </script>
+    <header>
+        <h1>Contact Us</h1>
+    </header>
+
+    <div class="form-box">
+
+        <input type="text" placeholder="Your Name">
+        <input type="email" placeholder="Email">
+        <textarea placeholder="Message"></textarea>
+
+        <button class="btn">Send</button>
+
+    </div>
+
+</body>
+
+</html>

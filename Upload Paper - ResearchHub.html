@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<!-- saved from url=(0065)file:///C:/Users/travi/OneDrive/Desktop/wp%20projects/upload.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Upload Paper - ResearchHub</title>
+    <link rel="stylesheet" href="./Upload Paper - ResearchHub_files/style.css">
+    <script src="./Upload Paper - ResearchHub_files/app.js"></script>
+    <style>
+        .upload-container {
+            max-width: 800px;
+            margin: 2rem auto;
+        }
+    </style>
+</head>
+
+<body><div class="app-layout"><div class="sidebar">
+        <div class="brand-area">
+            <div class="brand-title">ResearchHub</div>
+            <div class="brand-tagline">Personal Paper Manager</div>
+        </div>
+        <div class="nav-menu">
+            <a href="file:///C:/Users/travi/OneDrive/Desktop/wp%20projects/index.html" class="nav-link ">📊 Dashboard</a>
+            <a href="file:///C:/Users/travi/OneDrive/Desktop/wp%20projects/papers.html" class="nav-link ">📚 Library</a>
+            <a href="file:///C:/Users/travi/OneDrive/Desktop/wp%20projects/upload.html" class="nav-link active">⬆️ Upload</a>
+        </div>
+        <div class="logout-area">
+            <button class="btn btn-secondary" style="width:100%" onclick="logout()">🚪 Logout</button>
+        </div>
+    </div><div class="main-content"><div class="top-header">
+        <div class="header-search"></div>
+        <div class="user-profile">
+            <span style="color:var(--text-muted)">Welcome, <span style="color:#fff">admin</span></span>
+            <div class="avatar">A</div>
+        </div>
+    </div>
+    
+
+    <div class="container upload-container">
+        <div class="glass-container">
+            <h2 class="gradient-text" style="font-size: 2rem; margin-bottom: 0.5rem;">Add Research Paper</h2>
+            <p style="color: var(--text-muted); margin-bottom: 2rem;">Upload a new structural analysis or paper into your private dashboard.</p>
+
+            <form id="uploadForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Title <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="title" class="form-control" required="" placeholder="e.g. Attention is All You Need">
+                    </div>
+                    <div class="form-group">
+                        <label>Author <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="author" class="form-control" required="" placeholder="e.g. Ashish Vaswani">
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Year <span style="color:var(--danger)">*</span></label>
+                        <input type="number" id="year" class="form-control" required="" placeholder="e.g. 2017">
+                    </div>
+                    <div class="form-group">
+                        <label>Domain</label>
+                        <select id="domain" class="form-control" style="appearance: none;">
+                            <option value="AI / Deep Learning">AI / Deep Learning</option>
+                            <option value="Software Engineering">Software Engineering</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Physics">Physics</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Est. Reading Time</label>
+                        <input type="text" id="timeToRead" class="form-control" placeholder="e.g. 45 mins">
+                    </div>
+                    <div class="form-group">
+                        <label>Difficulty</label>
+                        <select id="difficulty" class="form-control" style="appearance: none;">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr style="border:0; border-top:1px solid var(--card-border); margin: 2rem 0;">
+                <h3 style="margin-bottom: 1.5rem; color:#fff;">Summaries &amp; Notes</h3>
+
+                <div class="form-group">
+                    <label>Short Summary (Max 150 chars) <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="shortSummary" class="form-control" maxlength="150" required="" placeholder="Brief overview of the paper...">
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Summary (Shown after completion)</label>
+                    <textarea id="detailedSummary" class="form-control" rows="4" placeholder="Your full analytical notes..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Key Points (One per line)</label>
+                    <textarea id="keyPoints" class="form-control" rows="3" placeholder="- Replaces LSTMs with attention
+- Highly parallelizable"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload PDF (.pdf) - Optional</label>
+                    <input type="file" id="pdf" class="form-control" accept=".pdf" style="padding: 0.5rem; cursor:pointer;">
+                </div>
+
+                <button type="submit" class="btn" style="width: 100%; margin-top: 1rem; font-size: 1.1rem; padding: 0.8rem;">Save Paper to Library</button>
+            </form>
+        </div>
+    </div>
+
+    </div></div>
+
+
+</body></html>
