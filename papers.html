@@ -139,6 +139,18 @@
     <div id="toast-container"></div>
 
     <script>
+        function normalizeStatus(status) {
+            const value = String(status || '').trim().toLowerCase();
+            if (value === 'not started' || value === 'not_started' || value === 'notstarted') return 'Not Started';
+            if (value === 'in progress' || value === 'in_progress' || value === 'inprogress') return 'In Progress';
+            if (value === 'completed') return 'Completed';
+            return status;
+        }
+
+        function getStatusKey(status) {
+            return String(normalizeStatus(status) || '').trim().toLowerCase().replace(/\s+/g, '_');
+        }
+
         (async function() {
             const user = getCurrentUser();
             document.getElementById('headerUserName').textContent = user;
@@ -168,12 +180,12 @@
             });
 
             if (sort === 'completed') {
-                filtered.sort((a, b) => (a.status === 'completed' ? -1 : 1));
+                filtered.sort((a, b) => (getStatusKey(a.status) === 'completed' ? -1 : 1));
             } else if (sort === 'oldest') {
                 filtered.reverse();
             } else if (sort === 'status') {
                 const statusOrder = { 'in_progress': 0, 'not_started': 1, 'completed': 2 };
-                filtered.sort((a, b) => (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2));
+                filtered.sort((a, b) => (statusOrder[getStatusKey(a.status)] || 2) - (statusOrder[getStatusKey(b.status)] || 2));
             }
 
             const container = document.getElementById('papersContainer');
@@ -185,12 +197,13 @@
             }
 
             filtered.forEach(paper => {
-                const progressPercent = (paper.progress || 0) * 100;
+                const progressPercent = formatProgress(paper.progress);
+                const statusKey = getStatusKey(paper.status);
                 const card = document.createElement('div');
                 card.className = 'paper-card';
                 card.innerHTML = `
                     <div class="paper-icon">
-                        <i class="fas fa-${paper.status === 'completed' ? 'check-circle' : (paper.status === 'in_progress' ? 'bookmark' : 'bookmark')}"></i>
+                        <i class="fas fa-${statusKey === 'completed' ? 'check-circle' : 'bookmark'}"></i>
                     </div>
                     <div class="paper-title">${paper.title}</div>
                     <div class="paper-author">${paper.author}</div>
@@ -215,179 +228,30 @@
                         <button class="action-btn" onclick="window.location.href='paperdetails.html?id=${paper.id}'">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <button class="action-btn action-btn-primary" onclick="updateStatus(${paper.id}, 'in_progress')">
+                        <button class="action-btn action-btn-primary" onclick="updateStatus(${paper.id}, 'In Progress')">
                             <i class="fas fa-play"></i> Start
                         </button>
                         <button class="action-btn">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
-                </a>
                 `;
                 container.appendChild(card);
             });
         }
 
-        function updateStatus(paperId, status) {
+        async function updateStatus(paperId, status) {
+            const papers = getPapers();
+            const paper = papers.find(p => p.id === paperId);
+            const progress = paper ? formatProgress(paper.progress) : 0;
+            await updatePaperStatus(paperId, status, status === 'Completed' ? 100 : status === 'Not Started' ? 0 : progress);
             showToast(`Status updated to ${status}`, false);
-            // In a real app, you would update the backend here
+            renderPapers();
         }
 
         function showComingSoon() {
             showToast('This feature is coming soon!', false);
         }
-    </script>
-</body>
-
-</html>
-        (async function() {
-            checkAuth();
-            await loadPapersFromBackend();
-            renderAppShell();
-            
-            window.toggleFavorite = async function(id) {
-                let papers = getPapers();
-                let p = papers.find(x => x.id === id);
-                if(p) {
-                    await updatePaperStatus(id, p.status, p.progress, !p.isFavorite);
-                    renderPapers();
-                }
-            }
-
-            window.setStatus = async function(id, status) {
-                let papers = getPapers();
-                let p = papers.find(x => x.id === id);
-                if(p) {
-                    let prog = p.progress;
-                    if(status === 'Completed') prog = 100;
-                    if(status === 'Not Started') prog = 0;
-                    if(status === 'In Progress' && (!prog || prog === 100)) prog = 10;
-                    
-                    await updatePaperStatus(id, status, prog, p.isFavorite);
-                    renderPapers();
-                }
-            }
-
-            function renderPapers() {
-                const container = document.getElementById("papersContainer");
-                container.innerHTML = "";
-                let papers = getPapers();
-
-                const filterQuery = document.getElementById("searchInput").value.toLowerCase();
-                const sortValue = document.getElementById("sortSelect").value;
-                const domainValue = document.getElementById("domainSelect").value;
-                const diffValue = document.getElementById("diffSelect").value;
-                const tierValue = document.getElementById("tierSelect").value;
-
-                let filtered = papers.filter(p => {
-                    const textToSearch = (p.title + " " + p.author + " " + p.year).toLowerCase();
-                    if (!textToSearch.includes(filterQuery)) return false;
-                    if (domainValue && p.domain !== domainValue) return false;
-                    if (diffValue && p.difficulty !== diffValue) return false;
-                    if (tierValue && p.tier !== tierValue) return false;
-                    return true;
-                });
-
-                if (sortValue === 'latest') {
-                    filtered.sort((a, b) => (b.timestamp_ms || 0) - (a.timestamp_ms || 0));
-                } else if (sortValue === 'oldest') {
-                    filtered.sort((a, b) => (a.timestamp_ms || 0) - (b.timestamp_ms || 0));
-                } else if (sortValue === 'completed') {
-                    filtered.sort((a, b) => (a.status === 'Completed' ? -1 : 1));
-                } else if (sortValue === 'status') {
-                    const rank = { "In Progress": 1, "Not Started": 2, "Completed": 3 };
-                    filtered.sort((a, b) => rank[a.status] - rank[b.status]);
-                }
-
-                if (filtered.length === 0) {
-                    container.innerHTML = `<p style="color:var(--text-muted)">No matching papers found with the current filters.</p>`;
-                    return;
-                }
-
-                filtered.forEach(p => {
-                    let statusClass = ""; let statusIcon = "";
-                    let specificActionsHtml = "";
-
-                    if (p.status === "Completed") {
-                        statusClass = "status-completed"; statusIcon = "✅";
-                    }
-                    else if (p.status === "In Progress") {
-                        statusClass = "status-progress"; statusIcon = "⏳";
-                    }
-                    else {
-                        statusClass = "status-not-started"; statusIcon = "❌";
-                        specificActionsHtml = `<button class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="setStatus(${p.id}, 'In Progress')">Start Reading</button>`;
-                    }
-                    
-                    let diffClass = "diff-beginner";
-                    if(p.difficulty === 'Intermediate') diffClass = "diff-intermediate";
-                    else if(p.difficulty === 'Advanced') diffClass = "diff-advanced";
-                    
-                    let tierTag = "";
-                    if (p.tier && p.tier !== "None") {
-                        tierTag = `<span class="tag-badge" style="background: rgba(142, 68, 173, 0.2); color: #e0b0ff; border: 1px solid #8e44ad;">🗂️ ${p.tier}</span>`;
-                    }
-
-                    let tagsHtml = `<div class="tags-container" style="margin-top: 0.5rem; display:flex; justify-content:space-between; width:100%">
-                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
-                            <span class="tag-badge ${diffClass}">${p.difficulty || 'Unknown'}</span>
-                            <span class="tag-badge">${p.domain || 'General'}</span>
-                            ${tierTag}
-                        </div>
-                    </div>`;
-                    
-                    let progressHtml = "";
-                    if(p.status === "In Progress") {
-                        const prog = p.progress || 0;
-                        progressHtml = `
-                        <div style="margin: 0.8rem 0;">
-                            <div style="display:flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.3rem;">
-                              <span style="color:var(--text-muted)">Progress</span>
-                              <span style="color:var(--primary-violet)">${prog}%</span>
-                            </div>
-                            <div class="progress-container">
-                              <div class="progress-bar" style="width: ${prog}%"></div>
-                            </div>
-                        </div>`;
-                        specificActionsHtml = `<a href="paperdetails.html?id=${p.id}" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Resume</a>`;
-                    }
-
-                    const card = document.createElement("div");
-                    card.className = "glass-card";
-                    card.innerHTML = `
-              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                 <h3 class="card-title" style="margin-bottom:0; max-width:80%">${p.title}</h3>
-                 <span class="favorite-icon ${p.isFavorite ? 'active' : ''}" onclick="toggleFavorite(${p.id})">★</span>
-              </div>
-              <div class="card-subtitle" style="margin-top: 0.3rem; margin-bottom: 0;">${p.author} • ${p.year}</div>
-              ${tagsHtml}
-              
-              <div style="margin-top:0.5rem; margin-bottom: 0.8rem; display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted);">
-                 <span><span style="font-size:1rem;">⏳</span> ${p.timeToRead || 'Time N/A'}</span>
-                 <span class="status-badge ${statusClass}">${statusIcon} ${p.status}</span>
-              </div>
-              
-              <div class="card-summary">${p.shortSummary}</div>
-              
-              ${progressHtml}
-              
-              <div class="card-actions">
-                ${specificActionsHtml}
-                <a href="paperdetails.html?id=${p.id}" class="btn ${p.status==='In Progress'? 'btn-secondary':''}" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; flex-grow: 1;">View Details</a>
-              </div>
-            `;
-                    container.appendChild(card);
-                });
-            }
-
-            document.getElementById("searchInput").addEventListener("input", renderPapers);
-            document.getElementById("sortSelect").addEventListener("change", renderPapers);
-            document.getElementById("domainSelect").addEventListener("change", renderPapers);
-            document.getElementById("diffSelect").addEventListener("change", renderPapers);
-            document.getElementById("tierSelect").addEventListener("change", renderPapers);
-
-            renderPapers();
-        })();
     </script>
 </body>
 

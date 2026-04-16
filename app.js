@@ -16,22 +16,57 @@ function getCurrentUser() {
     return localStorage.getItem("currentUser") || "admin";
 }
 
+function normalizeStatus(status) {
+    const value = String(status || "").trim().toLowerCase();
+    if (value === "not started" || value === "not_started" || value === "notstarted") return "Not Started";
+    if (value === "in progress" || value === "in_progress" || value === "inprogress") return "In Progress";
+    if (value === "completed") return "Completed";
+    return status;
+}
+
+function getStatusKey(status) {
+    return String(normalizeStatus(status) || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function formatProgress(progress) {
+    let num = Number(progress);
+    if (Number.isNaN(num)) return 0;
+    if (num > 0 && num <= 1) return Math.round(num * 100);
+    if (num > 100) return Math.round(num);
+    return num;
+}
+
+function cleanPapersData(papers) {
+    if (!Array.isArray(papers)) return [];
+    return papers.filter(paper => {
+        if (!paper || typeof paper !== 'object') return false;
+        const hasTitle = typeof paper.title === 'string' && paper.title.trim().length > 0;
+        const hasAuthor = typeof paper.author === 'string' && paper.author.trim().length > 0;
+        return hasTitle || hasAuthor;
+    });
+}
+
 // Global state cache to limit network requests while browsing
 window.appState = {
     papers: null
 };
 
+function getApiUrl() {
+    return new URL('api.php', window.location.href).href;
+}
+
 // Async fetch papers from backend API
 async function loadPapersFromBackend() {
     try {
         const user = getCurrentUser();
-        const res = await fetch(`http://localhost/research/api.php?user=${user}`);
+        const res = await fetch(`${getApiUrl()}?user=${encodeURIComponent(user)}`);
         if (!res.ok) throw new Error("Failed to fetch");
-        window.appState.papers = await res.json();
+        const papers = await res.json();
+        window.appState.papers = cleanPapersData(papers);
         return window.appState.papers;
     } catch (e) {
         console.error("Database error, falling back to empty list.", e);
-        showToast("Error connecting to database. Please run setup.", true);
+        showToast("Error connecting to backend. Make sure PHP is running.", true);
         return [];
     }
 }
@@ -52,7 +87,7 @@ async function savePapers(papersArrayOrNewPaperObject) {
     newPaper.userOwner = getCurrentUser();
     
     try {
-        const res = await fetch("http://localhost/research/api.php", {
+        const res = await fetch(getApiUrl(), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newPaper)
@@ -79,7 +114,7 @@ async function updatePaperStatus(id, newStatus, newProgress, isFavorite, tier = 
             payload.tier = tier;
         }
 
-        await fetch("http://localhost/research/api.php", {
+        await fetch(getApiUrl(), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -120,6 +155,12 @@ function getRecentlyViewedPapers() {
     return uniqueParsed;
 }
 
+function clearRecentlyViewedIfNoPapers() {
+    if (Array.isArray(window.appState.papers) && window.appState.papers.length === 0) {
+        localStorage.removeItem('recently_viewed_' + getCurrentUser());
+    }
+}
+
 function addRecentlyViewed(paper) {
     let recent = getRecentlyViewedPapers();
     recent = recent.filter(p => p.id !== paper.id);
@@ -133,8 +174,47 @@ function addRecentlyViewed(paper) {
     localStorage.setItem("recently_viewed_" + getCurrentUser(), JSON.stringify(recent));
 }
 
+function addRecentItem(paper) {
+    addRecentlyViewed(paper);
+    renderRecentItems('recentlyViewedContainer');
+}
+
+function removeRecentItem(id) {
+    const user = getCurrentUser();
+    const updated = getRecentlyViewedPapers().filter(item => Number(item.id) !== Number(id));
+    localStorage.setItem("recently_viewed_" + user, JSON.stringify(updated));
+    renderRecentItems('recentlyViewedContainer');
+}
+
+function renderRecentItems(containerId = 'recentlyViewedContainer') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const papers = getRecentlyViewedPapers();
+    container.innerHTML = '';
+
+    if (papers.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-title">No recently viewed files</div></div>`;
+        return;
+    }
+
+    papers.forEach(paper => {
+        const summary = paper.shortSummary || paper.author || 'No summary available.';
+        container.innerHTML += `
+            <div class="glass-card" style="padding: 1rem; position: relative;">
+                <button type="button" onclick="removeRecentItem(${paper.id})" style="position: absolute; top: 0.75rem; right: 0.75rem; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem;">
+                    ❌
+                </button>
+                <h4 style="color: #fff; margin-top: 0;">${paper.title}</h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">${summary}</p>
+                <a href="paperdetails.html?id=${paper.id}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Details</a>
+            </div>
+        `;
+    });
+}
+
 function renderAppShell() {
-    if(document.querySelector('.app-layout')) return;
+    if (document.querySelector('.app-layout') || document.querySelector('.sidebar')) return;
 
     const bodyChildren = Array.from(document.body.childNodes);
     const layout = document.createElement('div');
@@ -176,8 +256,8 @@ function renderAppShell() {
     mainContent.appendChild(header);
 
     const contentNodes = bodyChildren.filter(node => {
-        if(node.tagName === 'SCRIPT' && node.innerHTML.includes('checkAuth')) return false;
-        if(node.tagName === 'SCRIPT' && node.innerHTML.includes('renderAppShell')) return false;
+        if (node.tagName === 'SCRIPT' && node.innerHTML.includes('checkAuth')) return false;
+        if (node.tagName === 'SCRIPT' && node.innerHTML.includes('renderAppShell')) return false;
         return true;
     });
 

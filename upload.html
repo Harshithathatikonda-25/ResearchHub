@@ -123,13 +123,14 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Domain</label>
-                            <select id="domain" class="form-control" style="appearance: none;">
-                                <option value="AI / Deep Learning">AI / Deep Learning</option>
-                                <option value="Software Engineering">Software Engineering</option>
-                                <option value="Mathematics">Mathematics</option>
-                                <option value="Physics">Physics</option>
-                                <option value="Other">Other</option>
-                            </select>
+                            <input id="domain" class="form-control" list="domainOptions" placeholder="e.g. AI / Deep Learning" />
+                            <datalist id="domainOptions">
+                                <option value="AI / Deep Learning"></option>
+                                <option value="Software Engineering"></option>
+                                <option value="Mathematics"></option>
+                                <option value="Physics"></option>
+                                <option value="Other"></option>
+                            </datalist>
                         </div>
                     </div>
 
@@ -195,28 +196,41 @@
             document.getElementById('uploadForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
 
+                const title = document.getElementById('title').value.trim();
+                const author = document.getElementById('author').value.trim();
+                const year = document.getElementById('year').value.trim();
+                const shortSummary = document.getElementById('shortSummary').value.trim();
+
+                if (!title || !author || !year || !shortSummary) {
+                    showToast('Title, author, year, and short summary are required.', true);
+                    return;
+                }
+
                 const newPaper = {
                     id: Date.now(),
-                    title: document.getElementById('title').value,
-                    author: document.getElementById('author').value,
-                    year: document.getElementById('year').value,
-                    domain: document.getElementById('domain').value,
+                    title,
+                    author,
+                    year: parseInt(year, 10) || 0,
+                    domain: document.getElementById('domain').value.trim(),
                     difficulty: document.getElementById('difficulty').value,
-                    timeToRead: document.getElementById('timeToRead').value,
-                    shortSummary: document.getElementById('shortSummary').value,
-                    detailedSummary: document.getElementById('detailedSummary').value,
-                    keyPoints: document.getElementById('keyPoints').value,
+                    timeToRead: document.getElementById('timeToRead').value.trim(),
+                    shortSummary,
+                    detailedSummary: document.getElementById('detailedSummary').value.trim(),
+                    keyPoints: document.getElementById('keyPoints').value
+                        .split('\n')
+                        .map(point => point.trim())
+                        .filter(point => point.length > 0),
                     status: 'not_started',
                     progress: 0
                 };
 
                 try {
-                    const res = await fetch('http://localhost/research/api.php', {
+                    const res = await fetch('api.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            user: getCurrentUser(),
-                            paper: newPaper
+                            userOwner: getCurrentUser(),
+                            ...newPaper
                         })
                     });
 
@@ -236,56 +250,6 @@
         function showComingSoon() {
             showToast('This feature is coming soon!', false);
         }
-    </script>
-</body>
-
-</html>
-            checkAuth();
-            await loadPapersFromBackend();
-            renderAppShell();
-
-            document.getElementById("uploadForm").addEventListener("submit", async function (e) {
-                e.preventDefault();
-
-                const formData = new FormData();
-                formData.append("title", document.getElementById("title").value);
-                formData.append("author", document.getElementById("author").value);
-                formData.append("year", document.getElementById("year").value);
-                formData.append("domain", document.getElementById("domain").value);
-                formData.append("timeToRead", document.getElementById("timeToRead").value || 'Unknown');
-                formData.append("difficulty", document.getElementById("difficulty").value);
-                formData.append("shortSummary", document.getElementById("shortSummary").value);
-                formData.append("detailedSummary", document.getElementById("detailedSummary").value);
-                
-                const rawKeyPoints = document.getElementById("keyPoints").value;
-                const keyPoints = rawKeyPoints.split('\n').map(l => l.replace(/^- /, '').trim()).filter(l => l.length > 0);
-                formData.append("keyPoints", JSON.stringify(keyPoints));
-
-                const pdfInput = document.getElementById("pdf");
-                if(pdfInput && pdfInput.files.length > 0) {
-                    formData.append("pdfFile", pdfInput.files[0]);
-                }
-
-                // Send securely over multipart/form-data
-                try {
-                    const res = await fetch("api.php", {
-                        method: "POST",
-                        body: formData // No Content-Type header needed; fetch automatically provisions the multipart boundary!
-                    });
-                    if(!res.ok) throw new Error("Upload Failed");
-                    const data = await res.json();
-                    if(data.error) throw new Error(data.error);
-
-                    showToast("Paper successfully added! 🚀");
-                    setTimeout(() => {
-                        window.location.href = "papers.html";
-                    }, 1000);
-                } catch(err) {
-                    console.error(err);
-                    showToast("Error uploading paper.", true);
-                }
-            });
-        })();
     </script>
 </body>
 
