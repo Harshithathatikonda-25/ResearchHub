@@ -78,6 +78,9 @@
                 </div>
             </div>
             <div class="header-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                  <i class="fas fa-moon"></i>
+                </button>
                 <div class="header-info">
                     <div class="welcome-text">Welcome back</div>
                     <div class="user-name" id="headerUserName">User</div>
@@ -199,39 +202,51 @@
             filtered.forEach(paper => {
                 const progressPercent = formatProgress(paper.progress);
                 const statusKey = getStatusKey(paper.status);
+
+                // Status badge
+                const statusBadgeClass = statusKey === 'completed' ? 'status-completed' : statusKey === 'in_progress' ? 'status-progress' : 'status-not-started';
+                const statusLabel = statusKey === 'completed' ? 'Completed' : statusKey === 'in_progress' ? 'In Progress' : 'Not Started';
+                const statusIcon = statusKey === 'completed' ? 'fa-check-circle' : statusKey === 'in_progress' ? 'fa-book-open' : 'fa-bookmark';
+
+                // Action button based on status
+                let actionBtn = '';
+                if (statusKey === 'not_started') {
+                    actionBtn = `<button class="action-btn action-btn-primary" onclick="quickStart(${paper.id})"><i class="fas fa-play"></i> Start</button>`;
+                } else if (statusKey === 'in_progress') {
+                    actionBtn = `<button class="action-btn action-btn-primary" onclick="window.location.href='paperdetails.html?id=${paper.id}'"><i class="fas fa-book-open"></i> Resume</button>`;
+                } else {
+                    actionBtn = `<button class="action-btn" style="color:var(--success);border-color:var(--success);" onclick="window.location.href='paperdetails.html?id=${paper.id}'"><i class="fas fa-check-circle"></i> Review</button>`;
+                }
+
                 const card = document.createElement('div');
                 card.className = 'paper-card';
+                card.style.cursor = 'pointer';
                 card.innerHTML = `
-                    <div class="paper-icon">
-                        <i class="fas fa-${statusKey === 'completed' ? 'check-circle' : 'bookmark'}"></i>
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+                        <div class="paper-icon">
+                            <i class="fas ${statusIcon}"></i>
+                        </div>
+                        <span class="status-badge ${statusBadgeClass}" style="margin-left:auto;">${statusLabel}</span>
                     </div>
-                    <div class="paper-title">${paper.title}</div>
-                    <div class="paper-author">${paper.author}</div>
-                    <div class="paper-meta">
-                        <span class="paper-tag">
-                            <i class="fas fa-folder"></i> ${paper.domain || 'General'}
-                        </span>
-                        <span class="paper-tag">
-                            <i class="fas fa-chart-line"></i> ${paper.difficulty || 'Intermediate'}
-                        </span>
+                    <div class="paper-title" onclick="window.location.href='paperdetails.html?id=${paper.id}'">${paper.title}</div>
+                    <div class="paper-author">${paper.author} · ${paper.year || ''}</div>
+                    <div class="paper-meta" style="margin-top:0.5rem;">
+                        <span class="paper-tag"><i class="fas fa-folder"></i> ${paper.domain || 'General'}</span>
+                        <span class="paper-tag"><i class="fas fa-signal"></i> ${paper.difficulty || 'N/A'}</span>
+                        ${paper.timeToRead ? `<span class="paper-tag"><i class="fas fa-clock"></i> ${paper.timeToRead}</span>` : ''}
                     </div>
                     <div class="paper-progress">
                         <div class="progress-label">
                             <span>Progress</span>
-                            <span>${progressPercent.toFixed(0)}%</span>
+                            <span>${progressPercent}%</span>
                         </div>
                         <div class="progress-bar-container">
-                            <div class="progress-bar" style="width: ${progressPercent}%"></div>
+                            <div class="progress-bar" style="width:${progressPercent}%"></div>
                         </div>
                     </div>
                     <div class="paper-actions">
-                        <button class="action-btn" onclick="window.location.href='paperdetails.html?id=${paper.id}'">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                        <button class="action-btn action-btn-primary" onclick="updateStatus(${paper.id}, 'In Progress')">
-                            <i class="fas fa-play"></i> Start
-                        </button>
-                        <button class="action-btn">
+                        ${actionBtn}
+                        <button class="action-btn" style="color:var(--danger); margin-left:auto;" onclick="deletePaper(${paper.id})" title="Delete">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -247,6 +262,42 @@
             await updatePaperStatus(paperId, status, status === 'Completed' ? 100 : status === 'Not Started' ? 0 : progress);
             showToast(`Status updated to ${status}`, false);
             renderPapers();
+        }
+
+        async function quickStart(paperId) {
+            const papers = getPapers();
+            const paper = papers.find(p => p.id === paperId);
+            if (!paper) return;
+            try {
+                await fetch('api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update', id: paperId, status: 'In Progress', progress: 0, isFavorite: paper.isFavorite ? 1 : 0 })
+                });
+            } catch(e) {}
+            window.location.href = 'paperdetails.html?id=' + paperId;
+        }
+
+        async function deletePaper(paperId) {
+            if (!confirm('Delete this paper? This cannot be undone.')) return;
+            const user = getCurrentUser();
+            try {
+                const res = await fetch('api.php', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ id: paperId, user })
+                });
+                const result = await res.json();
+                if (result.status === 'success') {
+                    showToast('Paper deleted.', false);
+                    await loadPapersFromBackend();
+                    renderPapers();
+                } else {
+                    showToast('Delete failed: ' + result.message, true);
+                }
+            } catch (e) {
+                showToast('Error deleting paper.', true);
+            }
         }
 
         function showComingSoon() {

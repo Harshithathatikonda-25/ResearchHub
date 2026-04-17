@@ -78,6 +78,9 @@
         </div>
       </div>
       <div class="header-right">
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+          <i class="fas fa-moon"></i>
+        </button>
         <div class="header-info">
           <div class="welcome-text">Welcome back</div>
           <div class="user-name" id="headerUserName">User</div>
@@ -204,11 +207,19 @@
       document.getElementById('stat-progress').textContent = inProgress;
       document.getElementById('stat-notstarted').textContent = notStarted;
 
-      const continueReading = allPapers.filter(p => p.status === 'in_progress').slice(0, 3);
-      const recommended = allPapers.filter(p => p.status === 'not_started').slice(0, 3);
+      const continueReading = allPapers.filter(p => getStatusKey(p.status) === 'in_progress').slice(0, 3);
+      const recommended = allPapers.filter(p => getStatusKey(p.status) === 'not_started').slice(0, 3);
 
       renderPaperCards('continueReadingContainer', continueReading, 'recommendation-card');
       renderPaperCards('recommendedContainer', recommended, 'recommendation-card');
+
+      // Sync progress from live DB into recently viewed before rendering
+      const recentRaw = getRecentlyViewedPapers();
+      recentRaw.forEach(r => {
+        const live = allPapers.find(p => p.id === r.id);
+        if (live) { r.progress = live.progress; r.status = live.status; }
+      });
+      localStorage.setItem('recently_viewed_' + getCurrentUser(), JSON.stringify(recentRaw));
       renderRecentItems('recentlyViewedContainer');
     })();
 

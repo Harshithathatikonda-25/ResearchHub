@@ -1,26 +1,55 @@
-/* ResearchHub — Soft Dashboard Redesign */
+/* ResearchHub ï¿½ Soft Dashboard Redesign */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
 
 :root {
+  /* Backgrounds */
   --bg-primary: #f5f7fb;
   --bg-secondary: #ffffff;
   --bg-surface: #f0f3f8;
   --bg-muted: #eef2f7;
+  --bg-tertiary: rgba(148, 163, 184, 0.18);
+  --card-bg: rgba(255, 255, 255, 0.92);
+
+  /* Borders & Shadows */
   --border: rgba(148, 163, 184, 0.18);
+  --shadow-light: 0 10px 30px rgba(15, 23, 42, 0.06);
+  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.14);
+
+  /* Accent (short aliases) */
   --accent: #5c6ac4;
   --accent-soft: #e8ebff;
   --accent-alt: #8e7cff;
   --accent-alt-soft: #f1ebff;
+
+  /* Accent (long aliases used in HTML/paperdetails) */
+  --accent-primary: #5c6ac4;
+  --accent-primary-dark: #4f54c8;
+  --accent-primary-light: #e8ebff;
+  --accent-secondary: #8e7cff;
+  --accent-secondary-light: #f1ebff;
+
+  /* Text */
   --text: #1f2937;
+  --text-primary: #1f2937;
   --text-muted: #6b7280;
+  --text-secondary: #6b7280;
   --text-soft: #94a3b8;
+  --text-tertiary: #94a3b8;
+
+  /* Status colours */
   --success: #10b981;
   --info: #3b82f6;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --shadow-light: 0 10px 30px rgba(15, 23, 42, 0.06);
-  --shadow-soft: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+  /* Pastel tints */
+  --pastel-mint: rgba(16, 185, 129, 0.08);
+  --pastel-rose: rgba(239, 68, 68, 0.06);
+
+  /* Layout */
   --radius: 24px;
   --radius-sm: 16px;
   --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -948,3 +977,177 @@ select.form-control {
     padding: 1.25rem 1rem 2rem;
   }
 }
+
+/* ===== DARK MODE ===== */
+body.dark-mode {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-surface: #1e2130;
+  --bg-muted: #252836;
+  --bg-tertiary: rgba(255, 255, 255, 0.06);
+  --card-bg: rgba(26, 29, 39, 0.95);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow-light: 0 10px 30px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+
+  --accent: #7c85e8;
+  --accent-soft: rgba(124, 133, 232, 0.15);
+  --accent-alt: #a78bfa;
+  --accent-alt-soft: rgba(167, 139, 250, 0.12);
+  --accent-primary: #7c85e8;
+  --accent-primary-dark: #6b74d6;
+  --accent-primary-light: rgba(124, 133, 232, 0.15);
+  --accent-secondary: #a78bfa;
+  --accent-secondary-light: rgba(167, 139, 250, 0.12);
+
+  --text: #e2e8f0;
+  --text-primary: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-secondary: #94a3b8;
+  --text-soft: #64748b;
+  --text-tertiary: #64748b;
+
+  --pastel-mint: rgba(16, 185, 129, 0.12);
+  --pastel-rose: rgba(239, 68, 68, 0.10);
+
+  background: radial-gradient(circle at top left, rgba(124, 133, 232, 0.08), transparent 28%),
+              radial-gradient(circle at bottom right, rgba(167, 139, 250, 0.06), transparent 24%),
+              var(--bg-primary);
+}
+
+body.dark-mode .top-header {
+  background: rgba(15, 17, 23, 0.95);
+}
+
+body.dark-mode .glass-container,
+body.dark-mode .glass-card {
+  background: rgba(26, 29, 39, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .form-divider span {
+  background: var(--bg-secondary);
+}
+
+body.dark-mode select.form-control option {
+  background: var(--bg-secondary);
+  color: var(--text);
+}
+
+/* ===== THEME TOGGLE BUTTON ===== */
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: rotate(15deg) scale(1.05);
+}
+
+/* Toast */
+#toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.toast {
+  background: var(--bg-secondary);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 14px;
+  padding: 0.9rem 1.4rem;
+  box-shadow: var(--shadow-soft);
+  font-size: 0.9rem;
+  font-weight: 500;
+  animation: toastIn 0.3s ease;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== MISSING UTILITY CLASSES ===== */
+
+/* Primary button */
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border-color: transparent;
+}
+.btn-primary:hover {
+  background: var(--accent-primary-dark);
+}
+
+/* Full-width button */
+.btn-full {
+  width: 100%;
+}
+
+/* Required field asterisk */
+.required {
+  color: var(--danger);
+  margin-left: 0.2rem;
+}
+
+/* Recommendation card header row */
+.rec-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Small label under rec title */
+.rec-reason {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-top: 0.2rem;
+}
+
+/* Tag pill inside rec cards */
+.rec-tag {
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.rec-tag.tag-secondary {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: transparent;
+}
+
+/* diff badge variants */
+.diff-beginner  { background: rgba(16,185,129,0.12); color: var(--success); }
+.diff-intermediate { background: rgba(245,158,11,0.12); color: var(--warning); }
+.diff-advanced  { background: rgba(239,68,68,0.12);  color: var(--danger);  }

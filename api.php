@@ -138,7 +138,13 @@ try {
             $shortSummary = isset($data['shortSummary']) ? $data['shortSummary'] : '';
             $detailedSummary = isset($data['detailedSummary']) ? $data['detailedSummary'] : '';
             $keyPoints = isset($data['keyPoints']) ? json_encode($data['keyPoints']) : json_encode([]);
+// upload.html sends status as 'not_started' — normalize it to 'Not Started' before insert
             $status = isset($data['status']) ? $data['status'] : 'Not Started';
+            // Normalize status value
+            $statusLower = strtolower(str_replace(['_', ' '], '', $status));
+            if ($statusLower === 'notstarted') $status = 'Not Started';
+            elseif ($statusLower === 'inprogress') $status = 'In Progress';
+            elseif ($statusLower === 'completed') $status = 'Completed';
             $progress = isset($data['progress']) ? (int)$data['progress'] : 0;
             $userOwner = isset($data['userOwner']) ? $data['userOwner'] : 'admin';
             $timestamp_ms = time() * 1000;
@@ -160,7 +166,7 @@ try {
             }
             
             $stmt->bind_param(
-                "ssissssssiii",
+                "ssisssssssiss",
                 $title, $author, $year, $domain, $timeToRead, $difficulty,
                 $shortSummary, $detailedSummary, $keyPoints, $status, $progress, $userOwner, $timestamp_ms
             );

@@ -61,13 +61,18 @@ async function loadPapersFromBackend() {
         const user = getCurrentUser();
         const res = await fetch(`${getApiUrl()}?user=${encodeURIComponent(user)}`);
         if (!res.ok) throw new Error("Failed to fetch");
-        const papers = await res.json();
-        window.appState.papers = cleanPapersData(papers);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("Invalid response");
+        window.appState.papers = cleanPapersData(data);
         return window.appState.papers;
     } catch (e) {
-        console.error("Database error, falling back to empty list.", e);
-        showToast("Error connecting to backend. Make sure PHP is running.", true);
-        return [];
+        console.error("Backend error:", e);
+        if (window.appState.papers === null) {
+            // Only show toast if this is not a retry (first load failure)
+            showToast("Could not reach backend. Check PHP server is running.", true);
+        }
+        window.appState.papers = window.appState.papers || [];
+        return window.appState.papers;
     }
 }
 
@@ -136,28 +141,30 @@ function getStats() {
 function getRecentlyViewedPapers() {
     const data = localStorage.getItem("recently_viewed_" + getCurrentUser());
     let parsed = data ? JSON.parse(data) : [];
-    // Self-healing: Remove legacy entries that don't have timestamps
-    parsed = parsed.filter(p => p.lastViewed);
-    
-    // Self-healing: Remove duplicates by title in case they got stuck
-    let uniqueTitles = new Set();
-    let uniqueParsed = [];
-    for(let p of parsed) {
-        let titleLower = p.title.toLowerCase();
-        if(!uniqueTitles.has(titleLower)) {
-            uniqueTitles.add(titleLower);
-            uniqueParsed.push(p);
-        }
-    }
-    
-    // Save the cleaned up version back
-    localStorage.setItem("recently_viewed_" + getCurrentUser(), JSON.stringify(uniqueParsed));
-    return uniqueParsed;
+
+    // Heal missing timestamps — assign now so they aren't dropped
+    parsed = parsed.map(p => {
+        if (!p.lastViewed) p.lastViewed = Date.now();
+        return p;
+    });
+
+    // Remove duplicates by id, keep most recent
+    const seen = new Set();
+    parsed = parsed.filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+    });
+
+    localStorage.setItem("recently_viewed_" + getCurrentUser(), JSON.stringify(parsed));
+    return parsed;
 }
 
 function clearRecentlyViewedIfNoPapers() {
+    // Only clear if papers are confirmed loaded AND truly empty
     if (Array.isArray(window.appState.papers) && window.appState.papers.length === 0) {
-        localStorage.removeItem('recently_viewed_' + getCurrentUser());
+        // Don't wipe — user may have just logged in fresh. Only clear if no papers at all.
+        // localStorage.removeItem('recently_viewed_' + getCurrentUser());
     }
 }
 
@@ -199,15 +206,21 @@ function renderRecentItems(containerId = 'recentlyViewedContainer') {
     }
 
     papers.forEach(paper => {
-        const summary = paper.shortSummary || paper.author || 'No summary available.';
+        const timeAgo = paper.lastViewed ? new Date(paper.lastViewed).toLocaleString() : '';
+        const prog = formatProgress(paper.progress);
         container.innerHTML += `
-            <div class="glass-card" style="padding: 1rem; position: relative;">
-                <button type="button" onclick="removeRecentItem(${paper.id})" style="position: absolute; top: 0.75rem; right: 0.75rem; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 1rem;">
-                    ❌
+            <div class="recommendation-card" style="position: relative; padding: 1rem 1.2rem;">
+                <button type="button" onclick="removeRecentItem(${paper.id})" style="position: absolute; top: 0.6rem; right: 0.6rem; border: none; background: transparent; color: var(--text-soft); cursor: pointer; font-size: 0.85rem;" title="Remove">
+                    <i class="fas fa-times"></i>
                 </button>
-                <h4 style="color: #fff; margin-top: 0;">${paper.title}</h4>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.8rem;">${summary}</p>
-                <a href="paperdetails.html?id=${paper.id}" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">Details</a>
+                <div class="rec-title" style="padding-right: 1.5rem; margin-bottom: 0.4rem;">${paper.title}</div>
+                ${timeAgo ? `<div style="font-size: 0.72rem; color: var(--text-soft);">${timeAgo}</div>` : ''}
+                <div style="margin-top: 0.6rem; display: flex; align-items: center; gap: 0.6rem;">
+                    <div style="flex:1; background: var(--bg-muted); border-radius: 999px; height: 6px; overflow: hidden;">
+                        <div style="width:${prog}%; height:100%; background: linear-gradient(90deg, var(--accent), var(--accent-alt)); border-radius: inherit;"></div>
+                    </div>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--accent); min-width: 2.5rem; text-align: right;">${prog}%</span>
+                </div>
             </div>
         `;
     });
@@ -244,11 +257,9 @@ function renderAppShell() {
     const header = document.createElement('div');
     header.className = 'top-header';
     header.innerHTML = `
-        <div class="header-search">
-             <div style="font-size:0.8rem; color:var(--success);">🟢 MySQL Database Connected</div>
-        </div>
+        <div class="header-left"></div>
         <div class="user-profile">
-            <span style="color:var(--text-muted)">Welcome, <span style="color:#fff">${user}</span></span>
+            <span style="color:var(--text-muted)">Welcome, <span style="color:var(--text)">${user}</span></span>
             <div class="avatar">${user.charAt(0).toUpperCase()}</div>
         </div>
     `;
@@ -286,3 +297,30 @@ function showToast(message, isError = false) {
         toast.remove();
     }, 3000);
 }
+
+// ===== THEME (light / dark) =====
+function getTheme() {
+    return localStorage.getItem('theme') || 'light';
+}
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
+    }
+    // Update every toggle button icon on the page
+    document.querySelectorAll('.theme-toggle i').forEach(icon => {
+        icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    });
+}
+
+function toggleTheme() {
+    const next = getTheme() === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('theme', next);
+    applyTheme(next);
+}
+
+// Apply saved theme immediately (before paint)
+applyTheme(getTheme());
+document.addEventListener('DOMContentLoaded', () => applyTheme(getTheme()));

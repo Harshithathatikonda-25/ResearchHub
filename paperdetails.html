@@ -166,6 +166,9 @@
                 </div>
             </div>
             <div class="header-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                  <i class="fas fa-moon"></i>
+                </button>
                 <div class="header-info">
                     <div class="welcome-text">Welcome back</div>
                     <div class="user-name" id="headerUserName">User</div>
@@ -241,18 +244,26 @@
                 let progressWidget = "";
                 const paperProgress = formatProgress(paper.progress);
                 if (statusKey === 'in_progress') {
+                    const isHundred = paperProgress >= 100;
                     progressWidget = `
                     <div style="background: var(--accent-primary-light); padding: 2rem; border-radius: 12px; margin-top: 2rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                             <h4 style="color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.6rem;">
                                 <i class="fas fa-book-reader"></i> Reading Progress
                             </h4>
-                            <span style="color: var(--accent-primary-dark); font-weight: bold; font-size: 1.1rem;" id="progDisplay">${paperProgress}%</span>
+                            <span style="color: var(--accent-primary-dark); font-weight: bold; font-size: 1.3rem;" id="progDisplay">${paperProgress}%</span>
                         </div>
-                        <input type="range" class="range-slider" min="0" max="100" value="${paperProgress}" oninput="document.getElementById('progDisplay').innerText = this.value + '%';" onchange="updateProgress(this.value)">
-                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                        <input type="range" class="range-slider" id="progressSlider" min="0" max="100" value="${paperProgress}"
+                            oninput="onSliderInput(this.value)"
+                            onchange="onSliderChange(this.value)">
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
                             <button class="btn btn-success" style="flex: 1;" onclick="updateStatus('Completed')">
                                 <i class="fas fa-check-circle"></i> Mark as Completed
+                            </button>
+                        </div>
+                        <div id="saveToDesktopBtn" style="margin-top: 1rem; display: ${isHundred ? 'block' : 'none'};">
+                            <button class="btn btn-primary btn-full" onclick="savePaperToDesktop()">
+                                <i class="fas fa-download"></i> Save Completed Paper to Desktop
                             </button>
                         </div>
                     </div>`;
@@ -270,12 +281,17 @@
                     progressWidget = `
                     <div style="background: var(--pastel-mint); padding: 2rem; border-radius: 12px; margin-top: 2rem; text-align: center;">
                         <h4 style="color: var(--success); margin: 0 0 0.5rem 0; font-size: 1.2rem;">
-                            <i class="fas fa-check-circle"></i> Paper Completed
+                            <i class="fas fa-check-circle"></i> Paper Completed — 100%
                         </h4>
-                        <p style="color: var(--text-secondary); margin: 0;">You've finished reading this paper!</p>
-                        <button class="btn btn-secondary" onclick="updateStatus('In Progress')" style="margin-top: 1rem;">
-                            <i class="fas fa-redo"></i> Mark as In Progress
-                        </button>
+                        <p style="color: var(--text-secondary); margin: 0 0 1.2rem;">You've finished reading this paper!</p>
+                        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="savePaperToDesktop()">
+                                <i class="fas fa-download"></i> Save to Desktop
+                            </button>
+                            <button class="btn btn-secondary" onclick="updateStatus('In Progress')">
+                                <i class="fas fa-redo"></i> Mark as In Progress
+                            </button>
+                        </div>
                     </div>`;
                 }
 
@@ -346,8 +362,8 @@
                                 <i class="fas fa-calendar"></i> ${paper.year}
                             </p>
                         </div>
-                        <button class="rec-icon-btn ${paper.isFavorite ? 'active' : ''}" onclick="toggleFavorite()" style="font-size: 1.8rem; width: auto; height: auto; padding: 0.5rem 1rem;">
-                            <i class="fas ${paper.isFavorite ? 'fa-heart' : 'fa-heart'} fa-heart"></i>
+                        <button class="rec-icon-btn ${paper.isFavorite ? 'active' : ''}" onclick="toggleFavorite()" style="font-size: 1.1rem; width: 44px; height: 44px; padding: 0;">
+                            <i class="${paper.isFavorite ? 'fas' : 'far'} fa-heart"></i>
                         </button>
                     </div>
 
@@ -388,25 +404,113 @@
                 loadPaper();
             }
 
-            async function updateProgress(percent) {
+            // Live label update while dragging — NO re-render
+            function onSliderInput(val) {
+                const v = parseInt(val);
+                const display = document.getElementById('progDisplay');
+                if (display) display.innerText = v + '%';
+                const saveBtn = document.getElementById('saveToDesktopBtn');
+                if (saveBtn) saveBtn.style.display = v >= 100 ? 'block' : 'none';
+            }
+
+            // Save to DB on mouse/touch release
+            async function onSliderChange(val) {
+                const value = parseInt(val);
                 const papers = getPapers();
                 const paper = papers.find(p => p.id === paperId);
-                if (paper) {
-                    const value = formatProgress(percent);
-                    await updatePaperStatus(paperId, 'In Progress', value, paper.isFavorite);
-                    showToast('Progress saved', false);
+                if (!paper) return;
+
+                const newStatus = value >= 100 ? 'Completed' : 'In Progress';
+
+                // Call API directly — skip the internal loadPapersFromBackend inside updatePaperStatus
+                try {
+                    await fetch(getApiUrl(), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'update',
+                            id: paperId,
+                            status: newStatus,
+                            progress: value >= 100 ? 100 : value,
+                            isFavorite: paper.isFavorite ? 1 : 0
+                        })
+                    });
+                } catch(e) { console.error(e); }
+
+                if (value >= 100) {
+                    showToast('Reading complete! Paper marked as Completed.', false);
+                    // Re-render only when fully done
                     await loadPapersFromBackend();
                     loadPaper();
+                } else {
+                    showToast('Progress saved: ' + value + '%', false);
+                    // Update local cache without re-render so slider stays
+                    if (window.appState.papers) {
+                        const cached = window.appState.papers.find(p => p.id === paperId);
+                        if (cached) { cached.progress = value; cached.status = 'In Progress'; }
+                    }
                 }
+            }
+
+            function savePaperToDesktop() {
+                const papers = getPapers();
+                const paper = papers.find(p => p.id === paperId);
+                if (!paper) return;
+                const kpRaw = paper.keyPoints;
+                const kpList = Array.isArray(kpRaw)
+                    ? kpRaw.map(k => '  - ' + String(k).replace(/^-\s*/, '')).join('\n')
+                    : String(kpRaw || '').split('\n').map(k => '  - ' + k.replace(/^-\s*/, '')).join('\n');
+                const lines = [
+                    '==============================================',
+                    '  ResearchHub — Completed Paper Summary',
+                    '==============================================',
+                    '',
+                    'Title      : ' + paper.title,
+                    'Author     : ' + paper.author,
+                    'Year       : ' + paper.year,
+                    'Domain     : ' + (paper.domain || 'General'),
+                    'Difficulty : ' + (paper.difficulty || 'N/A'),
+                    'Read Time  : ' + (paper.timeToRead || 'N/A'),
+                    'Completed  : ' + new Date().toLocaleString(),
+                    '',
+                    '----------------------------------------------',
+                    'SHORT SUMMARY',
+                    '----------------------------------------------',
+                    paper.shortSummary || 'N/A',
+                    '',
+                    '----------------------------------------------',
+                    'DETAILED SUMMARY',
+                    '----------------------------------------------',
+                    paper.detailedSummary || 'N/A',
+                    '',
+                    '----------------------------------------------',
+                    'KEY POINTS',
+                    '----------------------------------------------',
+                    kpList || '  N/A',
+                    '',
+                    '==============================================',
+                ];
+                const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = paper.title.replace(/[^a-z0-9]/gi, '_') + '_summary.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+                showToast('Paper summary downloaded!', false);
             }
 
             function toggleFavorite() {
                 const papers = getPapers();
                 const paper = papers.find(p => p.id === paperId);
                 if (paper) {
-                    paper.isFavorite = !paper.isFavorite;
-                    loadPaper();
-                    showToast(paper.isFavorite ? 'Added to favorites!' : 'Removed from favorites', false);
+                    const newFav = !paper.isFavorite;
+                    updatePaperStatus(paperId, paper.status, formatProgress(paper.progress), newFav);
+                    showToast(newFav ? 'Added to favorites!' : 'Removed from favorites', false);
+                    setTimeout(() => {
+                        loadPapersFromBackend().then(loadPaper);
+                    }, 300);
                 }
             }
 

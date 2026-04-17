@@ -78,6 +78,9 @@
                 </div>
             </div>
             <div class="header-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">
+                  <i class="fas fa-moon"></i>
+                </button>
                 <div class="header-info">
                     <div class="welcome-text">Welcome back</div>
                     <div class="user-name" id="headerUserName">User</div>
@@ -234,15 +237,16 @@
                         })
                     });
 
-                    if (res.ok) {
-                        showToast('Paper uploaded successfully!', false);
+                    const result = await res.json();
+                    if (result.status === 'success') {
+                        showToast('Paper saved successfully!', false);
                         document.getElementById('uploadForm').reset();
-                        setTimeout(() => {
-                            window.location.href = 'papers.html';
-                        }, 1500);
+                        setTimeout(() => { window.location.href = 'papers.html'; }, 1500);
+                    } else {
+                        showToast('Error: ' + (result.message || 'Upload failed.'), true);
                     }
                 } catch (e) {
-                    showToast('Error uploading paper. Please try again.', true);
+                    showToast('Error uploading paper. Check PHP server is running.', true);
                 }
             });
         })();
