@@ -155,7 +155,7 @@
         }
 
         (async function() {
-            const user = getCurrentUser();
+            const user = getDisplayUser();
             document.getElementById('headerUserName').textContent = user;
             document.getElementById('headerAvatar').textContent = user.charAt(0).toUpperCase();
 

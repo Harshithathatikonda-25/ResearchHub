@@ -13,6 +13,11 @@ function logout() {
 }
 
 function getCurrentUser() {
+    // All papers are stored under "admin" — use this as the data key
+    return "admin";
+}
+
+function getDisplayUser() {
     return localStorage.getItem("currentUser") || "admin";
 }
 

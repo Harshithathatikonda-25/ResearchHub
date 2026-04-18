@@ -192,7 +192,7 @@
 
     <script>
         (async function() {
-            const user = getCurrentUser();
+            const user = getDisplayUser();
             document.getElementById('headerUserName').textContent = user;
             document.getElementById('headerAvatar').textContent = user.charAt(0).toUpperCase();
 
@@ -224,10 +224,29 @@
                         .map(point => point.trim())
                         .filter(point => point.length > 0),
                     status: 'not_started',
-                    progress: 0
+                    progress: 0,
+                    pdfPath: null
                 };
 
                 try {
+                    // Upload PDF first if one was selected
+                    const pdfFile = document.getElementById('pdf').files[0];
+                    if (pdfFile) {
+                        const formData = new FormData();
+                        formData.append('pdf', pdfFile);
+                        const uploadRes = await fetch('api/upload_pdf.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const uploadResult = await uploadRes.json();
+                        if (uploadResult.status === 'success') {
+                            newPaper.pdfPath = uploadResult.pdfPath;
+                        } else {
+                            showToast('PDF upload failed: ' + (uploadResult.message || 'Unknown error'), true);
+                            return;
+                        }
+                    }
+
                     const res = await fetch('api.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },

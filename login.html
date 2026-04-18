@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,114 +7,155 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-
-    .login-wrapper {
-      width: 100%;
-      max-width: 450px;
-      text-align: center;
-    }
-
+    body { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:1rem; }
+    .login-wrapper { width:100%; max-width:450px; text-align:center; }
     .login-icon {
-      width: 80px;
-      height: 80px;
+      width:80px; height:80px;
       background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 2.5rem;
-      margin: 0 auto 1.5rem;
-      box-shadow: var(--shadow-lg);
+      border-radius:16px; display:flex; align-items:center; justify-content:center;
+      color:white; font-size:2.5rem; margin:0 auto 1.5rem; box-shadow:var(--shadow-lg);
     }
-
-    .login-wrapper h2 {
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-      color: var(--text-primary);
+    .tab-row { display:flex; gap:0; margin-bottom:1.5rem; border-radius:10px; overflow:hidden; border:1px solid var(--bg-tertiary); }
+    .tab-btn {
+      flex:1; padding:0.7rem; border:none; cursor:pointer; font-size:0.95rem; font-weight:600;
+      background:var(--bg-secondary); color:var(--text-secondary); transition:all 0.2s;
     }
-
-    .tagline {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      margin-bottom: 2rem;
-    }
-
-    .form-divider {
-      text-align: center;
-      color: var(--text-tertiary);
-      margin: 1.5rem 0;
-      position: relative;
-    }
-
-    .form-divider::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: var(--bg-tertiary);
-    }
-
-    .form-divider span {
-      background: var(--bg-secondary);
-      padding: 0 1rem;
-      position: relative;
-    }
+    .tab-btn.active { background:var(--accent-primary); color:#fff; }
+    .error-msg { color:var(--danger,#ef4444); font-size:0.88rem; margin-top:0.5rem; min-height:1.2rem; }
   </style>
 </head>
-
 <body>
   <div class="login-wrapper glass-container">
-    <div class="login-icon">
-      <i class="fas fa-book-open"></i>
-    </div>
-    <h2>ResearchHub</h2>
-    <p class="tagline">Your Personal Research Paper Manager</p>
+    <div class="login-icon"><i class="fas fa-book-open"></i></div>
+    <h2 style="margin-bottom:0.3rem; color:var(--text-primary);">ResearchHub</h2>
+    <p style="color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.5rem;">Your Personal Research Paper Manager</p>
 
-    <form id="loginForm">
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" onsubmit="doLogin(event)">
       <div class="form-group">
         <label class="form-label">Username</label>
-        <input type="text" id="user" class="form-control" placeholder="Enter your username" required autofocus>
+        <input type="text" id="loginUser" class="form-control" placeholder="Enter your username" required autofocus>
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input type="password" id="pass" class="form-control" placeholder="Enter your password" required>
+        <input type="password" id="loginPass" class="form-control" placeholder="Enter your password" required>
       </div>
-      <button type="submit" class="btn btn-primary btn-full" style="padding: 0.9rem; font-size: 1rem; margin-top: 1rem;">
-        <i class="fas fa-sign-in-alt" style="margin-right: 0.5rem;"></i>Sign In
+      <div class="error-msg" id="loginError"></div>
+      <button type="submit" id="loginBtn" class="btn btn-primary btn-full" style="padding:0.9rem; font-size:1rem; margin-top:0.8rem;">
+        <i class="fas fa-sign-in-alt" style="margin-right:0.5rem;"></i>Sign In
       </button>
     </form>
 
-    <div class="form-divider">
-      <span>Demo Credentials</span>
-    </div>
-    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Use any username and password to log in</p>
+    <!-- REGISTER FORM -->
+    <form id="registerForm" style="display:none;" onsubmit="doRegister(event)">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="regUser" class="form-control" placeholder="Choose a username" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="regPass" class="form-control" placeholder="Choose a password (min 4 chars)" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="regPass2" class="form-control" placeholder="Repeat password" required>
+      </div>
+      <div class="error-msg" id="registerError"></div>
+      <button type="submit" id="registerBtn" class="btn btn-primary btn-full" style="padding:0.9rem; font-size:1rem; margin-top:0.8rem;">
+        <i class="fas fa-user-plus" style="margin-right:0.5rem;"></i>Create Account
+      </button>
+    </form>
   </div>
 
+  <div id="toast-container"></div>
+  <script src="app.js?v=2"></script>
   <script>
-    document.getElementById("loginForm").addEventListener("submit", function (e) {
+    function switchTab(tab) {
+      document.getElementById('loginForm').style.display    = tab === 'login'    ? '' : 'none';
+      document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+      document.getElementById('tabLogin').classList.toggle('active',    tab === 'login');
+      document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+      document.getElementById('loginError').textContent    = '';
+      document.getElementById('registerError').textContent = '';
+    }
+
+    async function doLogin(e) {
       e.preventDefault();
-      const u = document.getElementById("user").value.trim();
-      const p = document.getElementById("pass").value;
-      
-      if (u && p) {
-        localStorage.setItem("loggedIn", "true");
-        localStorage.setItem("currentUser", u);
-        window.location.href = "index.html";
-      } else {
-        alert("Please enter a username and password.");
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('loginError');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
+
+      try {
+        const res = await fetch('api/auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'login', username, password })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('currentUser', data.username);
+          window.location.href = 'index.html';
+        } else {
+          errEl.textContent = data.message || 'Login failed';
+        }
+      } catch(err) {
+        errEl.textContent = 'Cannot reach server. Is PHP running?';
       }
-    });
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-sign-in-alt" style="margin-right:0.5rem;"></i>Sign In';
+    }
+
+    async function doRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById('registerBtn');
+      const errEl = document.getElementById('registerError');
+      errEl.textContent = '';
+
+      const username = document.getElementById('regUser').value.trim();
+      const password = document.getElementById('regPass').value;
+      const password2 = document.getElementById('regPass2').value;
+
+      if (password !== password2) {
+        errEl.textContent = 'Passwords do not match';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+      try {
+        const res = await fetch('api/auth.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'register', username, password })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          showToast('Account created! Please sign in.');
+          switchTab('login');
+          document.getElementById('loginUser').value = username;
+        } else {
+          errEl.textContent = data.message || 'Registration failed';
+        }
+      } catch(err) {
+        errEl.textContent = 'Cannot reach server. Is PHP running?';
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-user-plus" style="margin-right:0.5rem;"></i>Create Account';
+    }
   </script>
 </body>
-
 </html>

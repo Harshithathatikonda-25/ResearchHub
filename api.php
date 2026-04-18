@@ -138,9 +138,9 @@ try {
             $shortSummary = isset($data['shortSummary']) ? $data['shortSummary'] : '';
             $detailedSummary = isset($data['detailedSummary']) ? $data['detailedSummary'] : '';
             $keyPoints = isset($data['keyPoints']) ? json_encode($data['keyPoints']) : json_encode([]);
-// upload.html sends status as 'not_started' — normalize it to 'Not Started' before insert
-            $status = isset($data['status']) ? $data['status'] : 'Not Started';
+            $pdfPath = isset($data['pdfPath']) ? $data['pdfPath'] : null;
             // Normalize status value
+            $status = isset($data['status']) ? $data['status'] : 'Not Started';
             $statusLower = strtolower(str_replace(['_', ' '], '', $status));
             if ($statusLower === 'notstarted') $status = 'Not Started';
             elseif ($statusLower === 'inprogress') $status = 'In Progress';
@@ -157,8 +157,8 @@ try {
             $stmt = $conn->prepare("
                 INSERT INTO papers 
                 (title, author, year, domain, timeToRead, difficulty, shortSummary, 
-                 detailedSummary, keyPoints, status, progress, userOwner, timestamp_ms)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 detailedSummary, keyPoints, status, progress, userOwner, timestamp_ms, pdfPath)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             
             if (!$stmt) {
@@ -166,9 +166,9 @@ try {
             }
             
             $stmt->bind_param(
-                "ssisssssssiss",
+                "ssisssssssisis",
                 $title, $author, $year, $domain, $timeToRead, $difficulty,
-                $shortSummary, $detailedSummary, $keyPoints, $status, $progress, $userOwner, $timestamp_ms
+                $shortSummary, $detailedSummary, $keyPoints, $status, $progress, $userOwner, $timestamp_ms, $pdfPath
             );
             
             if ($stmt->execute()) {
